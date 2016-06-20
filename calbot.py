@@ -17,7 +17,10 @@ def main():
     dispatcher.add_handler(start_handler)
     relay_handler = MessageHandler([Filters.text], relay)
     dispatcher.add_handler(relay_handler)
+    unknown_handler = MessageHandler([Filters.command], unknown)
+    dispatcher.add_handler(unknown_handler)
     updater.start_polling()
+    updater.idle()
 
 
 def start(bot, update):
@@ -27,6 +30,10 @@ def start(bot, update):
 
 def relay(bot, update):
     bot.sendMessage(chat_id=update.message.chat_id, text=update.message.text)
+
+
+def unknown(bot, update):
+    bot.sendMessage(chat_id=update.message.chat_id, text="Sorry, I didn't understand that command.")
 
 
 if __name__ == '__main__':
