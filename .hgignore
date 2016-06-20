@@ -1,0 +1,4 @@
+syntax: glob
+
+*.iml
+.idea/*
