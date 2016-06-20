@@ -8,6 +8,7 @@ from telegram.ext import MessageHandler, Filters
 
 
 TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+CHAT_ID = '@gelintestchannel'
 
 
 def main():
@@ -29,7 +30,7 @@ def start(bot, update):
 
 
 def relay(bot, update):
-    bot.sendMessage(chat_id=update.message.chat_id, text=update.message.text)
+    bot.sendMessage(chat_id=CHAT_ID, text=update.message.text)
 
 
 def unknown(bot, update):
