@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
 # Copyright 2016 Denis Nelubin.
@@ -20,16 +19,17 @@
 
 
 import logging
-from calbot.bot import run_bot
+from urllib.request import urlopen
+from icalendar import Calendar
 
 
-TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+logger = logging.getLogger('ical')
 
 
-def main():
-    run_bot(TOKEN)
-
-
-if __name__ == '__main__':
-    logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-    main()
+def read_ical(url):
+    logger.info('Retrieving %s', url)
+    with urlopen(url) as f:
+        ical = Calendar.from_ical(f.read())
+        for component in ical.walk():
+            if component.name == 'VEVENT':
+                yield component
