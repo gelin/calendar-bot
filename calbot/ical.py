@@ -26,10 +26,22 @@ from icalendar import Calendar
 logger = logging.getLogger('ical')
 
 
+class Event:
+
+    def __init__(self, vevent):
+        self.title = str(vevent.get('summary'))
+        self.date = vevent.get('dtstamp').dt        # TODO timestamp
+        self.location = str(vevent.get('location'))
+        self.description = str(vevent.get('description'))
+
+    def to_dict(self):
+        return dict(title=self.title, date=self.date, location=self.location, description=self.description)
+
+
 def read_ical(url):
     logger.info('Retrieving %s', url)
     with urlopen(url) as f:
         ical = Calendar.from_ical(f.read())
         for component in ical.walk():
             if component.name == 'VEVENT':
-                yield component
+                yield Event(component)

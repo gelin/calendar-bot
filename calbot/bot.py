@@ -28,7 +28,7 @@ from .ical import read_ical
 CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
 CHAT_ID = '@gelintestchannel'
 FORMAT = '''{title}
-{date}
+{date:%A, %d %B %Y, %H:%M %Z}
 {location}
 {description}
 '''
@@ -88,8 +88,4 @@ def send_event(bot, event):
 
 
 def format_event(event):
-    return FORMAT.format(
-        title=event.get('summary'),
-        date=event.get('dtstamp').dt,
-        location=event.get('location'),
-        description=event.get('description'))
+    return FORMAT.format(**event.to_dict())
