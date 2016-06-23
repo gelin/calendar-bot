@@ -30,7 +30,7 @@ class Event:
 
     def __init__(self, vevent):
         self.title = str(vevent.get('summary'))
-        self.date = vevent.get('dtstamp').dt        # TODO timestamp
+        self.date = vevent.get('dtstart').dt        # TODO timestamp
         self.location = str(vevent.get('location'))
         self.description = str(vevent.get('description'))
 
