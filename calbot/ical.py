@@ -19,7 +19,9 @@
 
 
 import logging
+import datetime
 from urllib.request import urlopen
+import pytz
 from icalendar import Calendar
 
 
@@ -29,6 +31,7 @@ logger = logging.getLogger('ical')
 class Event:
 
     def __init__(self, vevent):
+        self.uid = str(vevent.get('uid'))
         self.title = str(vevent.get('summary'))
         self.date = vevent.get('dtstart').dt        # TODO timestamp
         self.location = str(vevent.get('location'))
@@ -38,6 +41,11 @@ class Event:
         return dict(title=self.title, date=self.date, location=self.location, description=self.description)
 
 
+def read_future_events(url, advance=48):
+    # TODO put advance to config
+    return filter_future_events(read_ical(url), advance)
+
+
 def read_ical(url):
     logger.info('Retrieving %s', url)
     with urlopen(url) as f:
@@ -45,3 +53,11 @@ def read_ical(url):
         for component in ical.walk():
             if component.name == 'VEVENT':
                 yield Event(component)
+
+
+def filter_future_events(events, advance):
+    now = datetime.datetime.now(tz=pytz.UTC)
+    end = now + datetime.timedelta(hours=advance)
+    for event in events:
+        if event.date > now and event.date <= end:
+            yield event

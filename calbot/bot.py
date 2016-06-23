@@ -22,7 +22,7 @@ import logging
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
-from .ical import read_ical
+from .ical import read_future_events
 
 
 CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
@@ -57,7 +57,7 @@ def run_bot(token, interval=3600):
 
     dispatcher.add_error_handler(error)
 
-    updater.start_polling()
+    updater.start_polling(clean=True)
 
     job_queue.put(send_events, interval=interval, next_t=0, repeat=True)
 
@@ -78,7 +78,7 @@ def error(bot, update, error):
 
 
 def send_events(bot):
-    events = list(read_ical(CALENDAR_URL))
+    events = list(read_future_events(CALENDAR_URL))
     for event in events:
         send_event(bot, event)
 
@@ -89,3 +89,7 @@ def send_event(bot, event):
 
 def format_event(event):
     return FORMAT.format(**event.to_dict())
+
+
+def add_event_job(event):
+    pass
