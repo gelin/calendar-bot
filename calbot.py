@@ -21,13 +21,12 @@
 
 import logging
 from calbot.bot import run_bot
-
-
-TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+from calbot.conf import Config
 
 
 def main():
-    run_bot(TOKEN)
+    config = Config('var')
+    run_bot(config)
 
 
 if __name__ == '__main__':

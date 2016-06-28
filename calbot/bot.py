@@ -22,10 +22,9 @@ import logging
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler, Filters
-from .ical import read_future_events
+from .ical import Calendar
 
 
-CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
 CHAT_ID = '@gelintestchannel'
 FORMAT = '''{title}
 {date:%A, %d %B %Y, %H:%M %Z}
@@ -42,11 +41,14 @@ GREETING = '''Hello, I'm calendar bot, please give me some commands.
 '''
 
 
+__all__ = ['run_bot']
+
+
 logger = logging.getLogger('bot')
 
 
-def run_bot(token, interval=3600):
-    updater = Updater(token)
+def run_bot(config):
+    updater = Updater(config.token)
     job_queue = updater.job_queue
 
     dispatcher = updater.dispatcher
@@ -59,7 +61,14 @@ def run_bot(token, interval=3600):
 
     updater.start_polling(clean=True)
 
-    job_queue.put(send_events, interval=interval, next_t=0, repeat=True)
+    start_delay = 0
+    for calendar in config.calendars():
+
+        def update_this_calendar(bot):
+            update_calendar(bot, calendar)
+
+        job_queue.put(update_this_calendar, interval=config.interval, next_t=start_delay, repeat=True)
+        start_delay += 10
 
     updater.idle()
 
@@ -77,9 +86,9 @@ def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
 
-def send_events(bot):
-    events = list(read_future_events(CALENDAR_URL))
-    for event in events:
+def update_calendar(bot, config):
+    calendar = Calendar(config)
+    for event in calendar.events:
         send_event(bot, event)
 
 

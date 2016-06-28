@@ -22,42 +22,52 @@ import logging
 import datetime
 from urllib.request import urlopen
 import pytz
-from icalendar import Calendar
+import icalendar
+
+
+__all__ = ['Calendar']
 
 
 logger = logging.getLogger('ical')
 
 
+class Calendar:
+
+    def __init__(self, config):
+        self.url = config.url
+        self.advance = config.advance
+        self.name = None
+        self.timezone = pytz.UTC
+        self.description = None
+        self.events = list(self.read_ical(self.url))
+
+    def read_ical(self, url):
+        logger.info('Getting %s', url)
+        with urlopen(url) as f:
+            vcalendar = icalendar.Calendar.from_ical(f.read())
+            self.name = str(vcalendar.get('X-WR-CALNAME'))
+            self.timezone = pytz.timezone(str(vcalendar.get('X-WR-TIMEZONE')))
+            self.description = str(vcalendar.get('X-WR-CALDESC'))
+            for component in vcalendar.walk():
+                if component.name == 'VEVENT':
+                    yield Event(component, self.timezone)
+
+    def filter_future_events(self, events, advance):
+        now = datetime.datetime.now(tz=pytz.UTC)
+        end = now + datetime.timedelta(hours=advance)
+        for event in events:
+            if event.date > now and event.date <= end:
+                yield event
+
+
 class Event:
 
-    def __init__(self, vevent):
-        self.uid = str(vevent.get('uid'))
-        self.title = str(vevent.get('summary'))
-        self.date = vevent.get('dtstart').dt        # TODO timestamp
-        self.location = str(vevent.get('location'))
-        self.description = str(vevent.get('description'))
+    def __init__(self, vevent, timezone):
+        self.uid = str(vevent.get('UID'))
+        self.title = str(vevent.get('SUMMARY'))
+        self.date = vevent.get('DTSTART').dt.astimezone(timezone)
+        self.location = str(vevent.get('LOCATION'))
+        self.description = str(vevent.get('DESCRIPTION'))
 
     def to_dict(self):
         return dict(title=self.title, date=self.date, location=self.location, description=self.description)
-
-
-def read_future_events(url, advance=48):
-    # TODO put advance to config
-    return filter_future_events(read_ical(url), advance)
-
-
-def read_ical(url):
-    logger.info('Retrieving %s', url)
-    with urlopen(url) as f:
-        ical = Calendar.from_ical(f.read())
-        for component in ical.walk():
-            if component.name == 'VEVENT':
-                yield Event(component)
-
-
-def filter_future_events(events, advance):
-    now = datetime.datetime.now(tz=pytz.UTC)
-    end = now + datetime.timedelta(hours=advance)
-    for event in events:
-        if event.date > now and event.date <= end:
-            yield event
