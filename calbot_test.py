@@ -27,7 +27,7 @@ from icalendar.cal import Component
 
 from calbot.bot import format_event
 from calbot.conf import CalendarConfig
-from calbot.ical import Event, Calendar
+from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 
 
 def _get_component():
@@ -58,15 +58,46 @@ def test_read_calendar():
     assert 'Event title' == calendar.events[1].title, calendar.events[1].title
 
 
-# def test_filter_future_events():
-#     component_past = _get_component()
-#     component_past.add('dtstart', datetime.datetime.now() - datetime.timedelta(hours=1))
-#     component_now = _get_component()
-#     component_now.add('dtstart', datetime.datetime.now() + datetime.timedelta(minutes=10))
-#     component_future = _get_component()
-#     component_future.add('dtstart', datetime.datetime.now() + datetime.timedelta(hours=2))
-#     events = [Event(component_past), Event(component_now), Event(component_future)]
-#     result = list(filter_future_events(events, 1))
-#     assert 1 == len(result), len(result)
-#     assert component_now.decoded('dtstart') == result[0].date, result
+def test_filter_future_events():
+    timezone = pytz.UTC
+    component_past = _get_component()
+    component_past.add('dtstart', datetime.datetime.now(tz=timezone) - datetime.timedelta(hours=1))
+    component_now = _get_component()
+    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
+    component_future = _get_component()
+    component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
+    events = [Event(component_past, timezone), Event(component_now, timezone), Event(component_future, timezone)]
+    result = list(filter_future_events(events, 1))
+    assert 1 == len(result), len(result)
+    assert component_now.decoded('dtstart') == result[0].date, result
 
+
+def test_filter_notified_events():
+    timezone = pytz.UTC
+    component_now = _get_component()
+    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=5))
+    component_future24 = _get_component()
+    component_future24.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=24, minutes=-5))
+    component_future48 = _get_component()
+    component_future48.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=48, minutes=-5))
+
+    class TestCalendarConfig:
+
+        def __init__(self):
+            self.advance = [24, 48]
+
+        def event(self, id):
+            return TestEventConfig()
+
+    class TestEventConfig:
+
+        def __init__(self):
+            self.id = 1
+            self.last_notified = 48
+
+    events = [Event(component_now, timezone), Event(component_future24, timezone), Event(component_future48, timezone)]
+    config = TestCalendarConfig()
+    result = list(filter_notified_events(events, config))
+    assert 2 == len(result), result
+    assert component_now.decoded('dtstart') == result[0].date, result
+    assert component_future24.decoded('dtstart') == result[1].date, result

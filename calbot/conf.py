@@ -47,14 +47,14 @@ class CalendarConfig:
 
     def __init__(self, url):
         self.url = url
-        self.advance = 48   # TODO read from files
+        self.advance = [24, 48]     # TODO read from files, must be sorted
 
-    def events(self):
-        return [EventConfig()]  # TODO read from files
+    def event(self, id):
+        return EventConfig()        # TODO read from files
 
 
 class EventConfig:
 
     def __init__(self):
-        self.notified_in_advance = 1    # TODO save and read from files
-
+        self.id = 1                 # TODO save and read from files
+        self.last_notified = 48     # TODO save and read from files

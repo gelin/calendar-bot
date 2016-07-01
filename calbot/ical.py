@@ -19,7 +19,7 @@
 
 
 import logging
-import datetime
+from datetime import datetime, timedelta
 from urllib.request import urlopen
 import pytz
 import icalendar
@@ -52,18 +52,11 @@ class Calendar:
                 if component.name == 'VEVENT':
                     yield Event(component, self.timezone)
 
-    def filter_future_events(self, events, advance):
-        now = datetime.datetime.now(tz=pytz.UTC)
-        end = now + datetime.timedelta(hours=advance)
-        for event in events:
-            if event.date > now and event.date <= end:
-                yield event
-
 
 class Event:
 
     def __init__(self, vevent, timezone):
-        self.uid = str(vevent.get('UID'))
+        self.id = str(vevent.get('UID'))
         self.title = str(vevent.get('SUMMARY'))
         self.date = vevent.get('DTSTART').dt.astimezone(timezone)
         self.location = str(vevent.get('LOCATION'))
@@ -71,3 +64,24 @@ class Event:
 
     def to_dict(self):
         return dict(title=self.title, date=self.date, location=self.location, description=self.description)
+
+
+def filter_future_events(events, max_advance):
+    now = datetime.now(tz=pytz.UTC)
+    end = now + timedelta(hours=max_advance)
+    for event in events:
+        if now < event.date <= end:
+            yield event
+
+
+def filter_notified_events(events, config):
+    now = datetime.now(tz=pytz.UTC)
+    for event in events:
+        for advance in sorted(config.advance, reverse=True):
+            notified = config.event(event.id)
+            if notified is not None:
+                if notified.last_notified is None or notified.last_notified <= advance:
+                    continue
+            if event.date <= now + timedelta(hours=advance):
+                yield event
+                continue
