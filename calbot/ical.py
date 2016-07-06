@@ -19,7 +19,7 @@
 
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from urllib.request import urlopen
 import pytz
 import icalendar
@@ -36,12 +36,16 @@ class Calendar:
     def __init__(self, config):
         self.url = config.url
         self.advance = config.advance
+        self.day_start = config.day_start
         self.name = None
         self.timezone = pytz.UTC
         self.description = None
-        self.events = list(self.read_ical(self.url))
+        self.all_events = list(self.read_ical(self.url))
+        future_events = filter_future_events(self.all_events, max(self.advance))
+        self.events = list(filter_notified_events(future_events, config))
 
     def read_ical(self, url):
+        # TODO also filter past events to avoid reading of the whole calendar
         logger.info('Getting %s', url)
         with urlopen(url) as f:
             vcalendar = icalendar.Calendar.from_ical(f.read())
@@ -50,15 +54,18 @@ class Calendar:
             self.description = str(vcalendar.get('X-WR-CALDESC'))
             for component in vcalendar.walk():
                 if component.name == 'VEVENT':
-                    yield Event(component, self.timezone)
+                    yield Event(component, self.timezone, self.day_start)
 
 
 class Event:
 
-    def __init__(self, vevent, timezone):
+    def __init__(self, vevent, timezone, day_start=None):
         self.id = str(vevent.get('UID'))
         self.title = str(vevent.get('SUMMARY'))
-        self.date = vevent.get('DTSTART').dt.astimezone(timezone)
+        try:
+            self.date = vevent.get('DTSTART').dt.astimezone(timezone)
+        except:
+            self.date = datetime.combine(vevent.get('DTSTART').dt, day_start.replace(tzinfo=timezone))
         self.location = str(vevent.get('LOCATION'))
         self.description = str(vevent.get('DESCRIPTION'))
 
@@ -79,9 +86,10 @@ def filter_notified_events(events, config):
     for event in events:
         for advance in sorted(config.advance, reverse=True):
             notified = config.event(event.id)
-            if notified is not None:
-                if notified.last_notified is None or notified.last_notified <= advance:
-                    continue
+            last_notified = notified is not None and notified.last_notified
+            if notified.last_notified is not None and notified.last_notified <= advance:
+                continue
             if event.date <= now + timedelta(hours=advance):
                 yield event
                 continue
+

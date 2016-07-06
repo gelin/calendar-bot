@@ -52,10 +52,10 @@ def test_read_calendar():
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'TEST' == calendar.name, calendar.name
     assert 'Just a test calendar' == calendar.description, calendar.description
-    assert datetime.datetime(2016, 6, 24, 0, 0, 0, tzinfo=pytz.UTC) == calendar.events[0].date, calendar.events[0].date
-    assert 'Событие по-русски' == calendar.events[0].title, calendar.events[0].title
-    assert datetime.datetime(2016, 6, 23, 0, 0, 0, tzinfo=pytz.UTC) == calendar.events[1].date, calendar.events[1].date
-    assert 'Event title' == calendar.events[1].title, calendar.events[1].title
+    assert datetime.datetime(2016, 6, 24, 0, 0, 0, tzinfo=pytz.UTC) == calendar.all_events[0].date, calendar.all_events[0].date
+    assert 'Событие по-русски' == calendar.all_events[0].title, calendar.all_events[0].title
+    assert datetime.datetime(2016, 6, 23, 0, 0, 0, tzinfo=pytz.UTC) == calendar.all_events[1].date, calendar.all_events[1].date
+    assert 'Event title' == calendar.all_events[1].title, calendar.all_events[1].title
 
 
 def test_filter_future_events():
@@ -101,3 +101,14 @@ def test_filter_notified_events():
     assert 2 == len(result), result
     assert component_now.decoded('dtstart') == result[0].date, result
     assert component_future24.decoded('dtstart') == result[1].date, result
+
+
+def test_date_only_event():
+    timezone = pytz.UTC
+    component = _get_component()
+    component.add('dtstart', datetime.date.today())
+    event = Event(component, timezone, datetime.time(10, 0))
+    assert isinstance(event.date, datetime.datetime), event.date.__class__.__name__
+    assert 10 == event.date.hour, event.date
+    assert 0 == event.date.minute, event.date
+    assert pytz.UTC == event.date.tzinfo, event.date

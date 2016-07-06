@@ -19,10 +19,10 @@
 
 
 import logging
-
+from datetime import time
 
 TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
+CALENDAR_URL = 'https://calendar.google.com/calendar/ical/aqclsibjm591jbbk875uio9k40%40group.calendar.google.com/public/basic.ics'
 # TODO read from config files
 
 
@@ -47,7 +47,8 @@ class CalendarConfig:
 
     def __init__(self, url):
         self.url = url
-        self.advance = [24, 48]     # TODO read from files, must be sorted
+        self.advance = [24, 48, 72]     # TODO read from files
+        self.day_start = time(10, 0)
 
     def event(self, id):
         return EventConfig()        # TODO read from files
@@ -57,4 +58,4 @@ class EventConfig:
 
     def __init__(self):
         self.id = 1                 # TODO save and read from files
-        self.last_notified = 48     # TODO save and read from files
+        self.last_notified = None   # TODO save and read from files
