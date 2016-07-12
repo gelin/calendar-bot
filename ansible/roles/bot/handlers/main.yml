@@ -1,0 +1,10 @@
+---
+- name: update systemd
+  service:
+    name: '{{ bot_service }}'
+    enabled: yes
+
+- name: restart bot
+  service:
+    name: '{{ bot_service }}'
+    state: restarted

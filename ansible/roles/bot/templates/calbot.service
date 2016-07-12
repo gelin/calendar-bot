@@ -1,0 +1,12 @@
+[Unit]
+Description=Calendar bot
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 {{ bot_dir }}/calbot.py
+WorkingDirectory={{ bot_dir }}
+User={{ bot_user }}
+Group={{ bot_group }}
+
+[Install]
+WantedBy=multi-user.target

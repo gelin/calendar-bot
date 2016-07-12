@@ -1,0 +1,6 @@
+---
+  bot_user: calbot
+  bot_group: calbot
+  bot_dir: /opt/calbot
+  bot_service: calbot
+
