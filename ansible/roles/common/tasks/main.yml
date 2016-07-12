@@ -1,0 +1,26 @@
+---
+- name: apt-get update
+  apt: update_cache=yes
+
+- name: install iptables-persistent
+  apt: name=iptables-persistent state=present
+
+- name: Set up iptables rules
+  copy: src=iptables.rules.v4 dest=/etc/iptables/rules.v4
+  notify: restart iptables
+
+- name: Set up ip6tables rules
+  copy: src=iptables.rules.v6 dest=/etc/iptables/rules.v6
+  notify: restart iptables
+
+- name: Set timezone variables
+  copy: content='Asia/Omsk'
+        dest=/etc/timezone
+        owner=root
+        group=root
+        mode=0644
+        backup=yes
+  notify: update timezone
+
+- name: install ntp
+  apt: name=ntp state=present

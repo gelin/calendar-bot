@@ -1,0 +1,7 @@
+---
+- name: Copies bot files, restarts the bot
+  hosts: bothosts
+  remote_user: root
+
+  roles:
+    - bot

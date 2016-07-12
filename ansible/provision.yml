@@ -1,0 +1,9 @@
+---
+- name: Install Python, Nginx, Letsencypt
+  hosts: bothosts
+  remote_user: root
+
+  roles:
+    - common
+#    - nginx
+#    - letsencrypt

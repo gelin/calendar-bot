@@ -1,0 +1,6 @@
+---
+- name: restart iptables
+  service: name=netfilter-persistent state=restarted
+
+- name: update timezone
+  command: dpkg-reconfigure --frontend noninteractive tzdata
