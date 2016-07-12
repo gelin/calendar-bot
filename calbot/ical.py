@@ -87,9 +87,9 @@ def filter_notified_events(events, config):
         for advance in sorted(config.advance, reverse=True):
             notified = config.event(event.id)
             last_notified = notified is not None and notified.last_notified
-            if notified.last_notified is not None and notified.last_notified <= advance:
+            if last_notified is not None and last_notified <= advance:
                 continue
             if event.date <= now + timedelta(hours=advance):
                 yield event
-                continue
+                break
 

@@ -47,7 +47,7 @@ class CalendarConfig:
 
     def __init__(self, url):
         self.url = url
-        self.advance = [24, 48, 72]     # TODO read from files
+        self.advance = [24, 48]     # TODO read from files
         self.day_start = time(10, 0)
 
     def event(self, id):
