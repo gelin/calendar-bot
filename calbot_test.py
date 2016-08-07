@@ -26,7 +26,7 @@ import pytz
 from icalendar.cal import Component
 
 from calbot.bot import format_event
-from calbot.conf import CalendarConfig
+from calbot.conf import CalendarConfig, Config
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 
 
@@ -47,7 +47,7 @@ def test_format_event():
 
 
 def test_read_calendar():
-    config = CalendarConfig('file://{}/test.ics'.format(os.path.dirname(__file__)))
+    config = CalendarConfig(Config('test'), 'file://{}/test.ics'.format(os.path.dirname(__file__)))
     calendar = Calendar(config)
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'TEST' == calendar.name, calendar.name

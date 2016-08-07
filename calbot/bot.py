@@ -90,6 +90,8 @@ def update_calendar(bot, config):
     calendar = Calendar(config)
     for event in calendar.events:
         send_event(bot, event)
+        config.event_notified(event)
+    config.save_events()
 
 
 def send_event(bot, event):

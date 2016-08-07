@@ -19,7 +19,7 @@
 
 
 import logging
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta
 from urllib.request import urlopen
 import pytz
 import icalendar
@@ -32,19 +32,35 @@ logger = logging.getLogger('ical')
 
 
 class Calendar:
+    """
+    Calendar, as it was read from ical file.
+    """
 
     def __init__(self, config):
         self.url = config.url
+        """url of the ical file, from persisted config"""
         self.advance = config.advance
+        """array of the numbers: how many hours in advance notify about the event, from persisted config"""
         self.day_start = config.day_start
+        """when the day starts if the event has no specified time, from persisted config"""
         self.name = None
+        """name of the calendar, from ical file"""
         self.timezone = pytz.UTC
+        """timezone of the calendar, from ical file"""
         self.description = None
+        """description of the calendar, from ical file"""
         self.all_events = list(self.read_ical(self.url))
+        """list of all calendar events, from ical file"""
         future_events = filter_future_events(self.all_events, max(self.advance))
         self.events = list(filter_notified_events(future_events, config))
+        """list of calendar events which should be notified, filtered from ical file"""
 
     def read_ical(self, url):
+        """
+        Reads ical file from url.
+        :param url: url to read
+        :return: it's generator, yields each event read from ical
+        """
         # TODO also filter past events to avoid reading of the whole calendar
         logger.info('Getting %s', url)
         with urlopen(url) as f:
@@ -58,22 +74,43 @@ class Calendar:
 
 
 class Event:
+    """
+    Calendar event as it was read from ical file.
+    """
 
     def __init__(self, vevent, timezone, day_start=None):
         self.id = str(vevent.get('UID'))
+        """unique id of the event"""
         self.title = str(vevent.get('SUMMARY'))
+        """title of the event"""
+        self.date = None
+        """calendar event datetime"""
         try:
             self.date = vevent.get('DTSTART').dt.astimezone(timezone)
         except:
             self.date = datetime.combine(vevent.get('DTSTART').dt, day_start.replace(tzinfo=timezone))
         self.location = str(vevent.get('LOCATION'))
+        """the event location as string"""
         self.description = str(vevent.get('DESCRIPTION'))
+        """the event description"""
+        self.notified_for_advance = None
+        """hours in advance for which this event should be notified"""
 
     def to_dict(self):
+        """
+        Converts the event to dict to be easy passed to format function.
+        :return: dict of the event properties
+        """
         return dict(title=self.title, date=self.date, location=self.location, description=self.description)
 
 
 def filter_future_events(events, max_advance):
+    """
+    Filters only events which are after now and before the max_advance value
+    :param events: iterable of events
+    :param max_advance: future point, from now in hours, until lookup the events
+    :return: it's generator, yields each filtered event
+    """
     now = datetime.now(tz=pytz.UTC)
     end = now + timedelta(hours=max_advance)
     for event in events:
@@ -82,6 +119,14 @@ def filter_future_events(events, max_advance):
 
 
 def filter_notified_events(events, config):
+    """
+    Filters events which were already notified.
+    Uses the array expected notification advances from the config.
+    For each filtered event sets the advance it should be notified for (notified_for_advance).
+    :param events: iterable of events
+    :param config: CalendarConfig
+    :return: it's generator, yields each filtered event
+    """
     now = datetime.now(tz=pytz.UTC)
     for event in events:
         for advance in sorted(config.advance, reverse=True):
@@ -90,6 +135,7 @@ def filter_notified_events(events, config):
             if last_notified is not None and last_notified <= advance:
                 continue
             if event.date <= now + timedelta(hours=advance):
+                event.notified_for_advance = advance
                 yield event
                 break
 
