@@ -159,6 +159,8 @@ class CalendarConfig:
         """Chat ID of the user to whom this calendar belongs to"""
         self.url = url
         """Url of the ical file to download"""
+        self.name = None
+        """Human readable name of the calendar"""
         self.channel_id = channel_id
         """Channel where to broadcast calendar events"""
         self.verified = False
@@ -216,6 +218,14 @@ class CalendarConfig:
                 config.add_section(event.id)
                 config.set(event.id, "last_notified", str(event.last_notified))
             config.write(file)
+
+    def save_calendar(self, calendar):
+        """
+        Saves the calendar as verified and persisted
+        :param calendar: Calendar read from ical file
+        :return: None
+        """
+        pass
 
 
 class EventConfig:
