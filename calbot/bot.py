@@ -68,7 +68,7 @@ def run_bot(config):
     start_delay = 0
     for calendar in config.calendars():
         queue_calendar_update(updater.job_queue, calendar, start_delay)
-        start_delay += 10
+        start_delay += 1
 
     updater.idle()
 
@@ -116,9 +116,9 @@ def update_calendar(bot, config):
             send_event(bot, config.channel_id, event)
             config.event_notified(event)
         config.save_events()
-        bot.sendMessage(chat_id=config.channel_id,
-                        text='Events from %s will be notified here' % calendar.name)
         if not config.verified:
+            bot.sendMessage(chat_id=config.channel_id,
+                            text='Events from %s will be notified here' % calendar.name)
             config.save_calendar(calendar)
             bot.sendMessage(chat_id=config.user_id,
                             text='Added:\n%s %s %s' % (config.id, config.name, config.channel_id))

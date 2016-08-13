@@ -94,9 +94,6 @@ import os
 from datetime import time
 
 TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-CALENDAR_URL = 'https://calendar.google.com/calendar/ical/aqclsibjm591jbbk875uio9k40%40group.calendar.google.com/public/basic.ics'
-CHANNEL_ID = '@gelintestchannel'
-# CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
 # TODO read from config files
 
 
@@ -104,10 +101,6 @@ __all__ = ['Config']
 
 
 logger = logging.getLogger('conf')
-
-
-def events_file(vardir, user_id, cal_id):
-    return os.path.join(vardir, user_id, cal_id, 'events.cfg')
 
 
 class Config:
@@ -123,6 +116,31 @@ class Config:
         self.interval = 3600
         """the interval to reread calendars, in seconds"""
 
+    def calendars(self):
+        """
+        Returns list of all known and monitoring calendars
+        :return: list of CalendarConfig
+        """
+        for entry in os.scandir(self.vardir):
+            if not entry.name.startswith('.') and entry.is_dir():
+                user_id = entry.name
+                for calendar in self.read_calendars(user_id):
+                    yield calendar
+
+    def read_calendars(self, user_id):
+        config = ConfigParser(interpolation=None)
+        config_file = CalendarsConfigFile(self.vardir, user_id)
+        config_file.read(config)
+        for section in config.sections():
+            if section != 'settings':
+                calendar = CalendarConfig(self,
+                                          section,
+                                          user_id,
+                                          config.get(section, 'url'),
+                                          config.get(section, 'channel_id'))
+                calendar.verified = config.getboolean(section, 'verified')
+                yield calendar
+
     def add_calendar(self, user_id, url, channel_id):
         """
         Adds the calendar to the persisted list
@@ -131,16 +149,24 @@ class Config:
         :param channel_id: ID of the channel where to send calendar events
         :return: CalendarConfig instance
         """
-        next_id = '1'     # TODO
-        calendar = CalendarConfig(self, next_id, user_id, url, channel_id)
-        return calendar
+        config = ConfigParser(interpolation=None)
+        config_file = CalendarsConfigFile(self.vardir, user_id)
+        config_file.read(config)
 
-    def calendars(self):
-        """
-        Returns list of all known and monitoring calendars
-        :return: list of CalendarConfig
-        """
-        return [CalendarConfig(self, '1', 'TEST', CALENDAR_URL, CHANNEL_ID)]   # TODO more calendars
+        next_id = str(config.getint('settings', 'last_id', fallback=0) + 1)
+        if not config.has_section('settings'):
+            config.add_section('settings')
+        config.set('settings', 'last_id', next_id)
+
+        calendar = CalendarConfig(self, next_id, user_id, url, channel_id)
+        config.add_section(next_id)
+        config.set(next_id, 'url', url)
+        config.set(next_id, 'channel_id', channel_id)
+        config.set(next_id, 'verified', 'false')
+
+        config_file.write(config)
+
+        return calendar
 
 
 class CalendarConfig:
@@ -174,8 +200,8 @@ class CalendarConfig:
         self.load_events()
 
     def load_events(self):
-        config = ConfigParser()
-        config.read(events_file(self.vardir, self.user_id, self.id))
+        config = ConfigParser(interpolation=None)
+        EventsConfigFile(self.vardir, self.user_id, self.id).read(config)
         for event_id in config.sections():
             event = EventConfig(self, event_id)
             event.last_notified = config.getint(event_id, 'last_notified', fallback=None)
@@ -204,28 +230,34 @@ class CalendarConfig:
         config_event = self.event(event.id)
         config_event.last_notified = event.notified_for_advance
 
-    def save_events(self):
-        """
-        Saves all tracked events into persisted file
-        :return: None
-        """
-        filename = events_file(self.vardir, self.user_id, self.id)
-        caldir = os.path.dirname(filename)
-        os.makedirs(caldir, exist_ok=True)
-        with open(filename, 'wt') as file:
-            config = ConfigParser()
-            for event in self.events.values():
-                config.add_section(event.id)
-                config.set(event.id, "last_notified", str(event.last_notified))
-            config.write(file)
-
     def save_calendar(self, calendar):
         """
         Saves the calendar as verified and persisted
         :param calendar: Calendar read from ical file
         :return: None
         """
-        pass
+        config_file = CalendarsConfigFile(self.vardir, self.user_id)
+        config = ConfigParser(interpolation=None)
+        config_file.read(config)
+
+        self.verified = True
+        config.set(self.id, 'verified', 'true')
+        self.name = calendar.name
+        config.set(self.id, 'name', calendar.name)
+
+        config_file.write(config)
+
+    def save_events(self):
+        """
+        Saves all tracked events into persisted file
+        :return: None
+        """
+        config_file = EventsConfigFile(self.vardir, self.user_id, self.id)
+        config = ConfigParser(interpolation=None)
+        for event in self.events.values():
+            config.add_section(event.id)
+            config.set(event.id, 'last_notified', str(event.last_notified))
+        config_file.write(config)
 
 
 class EventConfig:
@@ -242,3 +274,68 @@ class EventConfig:
         """Chat ID of the user to whom the calendar belongs to"""
         self.last_notified = None
         """the last notification made for this event, as hours in advance, the integer or None"""
+
+
+class CalendarsConfigFile:
+    """
+    Reads and writes calendars config file.
+    """
+
+    def __init__(self, vardir, user_id):
+        """
+        Creates the config
+        :param vardir: basic var dir
+        :param user_id: user ID as string
+        """
+        self.path = os.path.join(vardir, user_id, 'calendars.cfg')
+
+    def read(self, config):
+        """
+        Reads the configuration from the file
+        :param config: ConfigParser to be read from the file
+        :return: None
+        """
+        config.read(self.path)
+
+    def write(self, config):
+        """
+        Writes the configuration to the file. Creates dirs and files if necessary
+        :param config: ConfigParser to be written
+        :return: None
+        """
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, 'wt') as file:
+            config.write(file)
+
+
+class EventsConfigFile:
+    """
+    Reads and writes events config file.
+    """
+
+    def __init__(self, vardir, user_id, cal_id):
+        """
+        Creates the config
+        :param vardir: basic var dir
+        :param user_id: user ID as string
+        :param cal_id: ID of the calendar
+        """
+        self.path = os.path.join(vardir, user_id, cal_id, 'events.cfg')
+
+    def read(self, config):
+        """
+        Reads the configuration from the file
+        :param config: ConfigParser to be read from the file
+        :return: None
+        """
+        config.read(self.path)
+
+    def write(self, config):
+        """
+        Writes the configuration to the file. Creates dirs and files if necessary
+        :param config: ConfigParser to be written
+        :return: None
+        """
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, 'wt') as file:
+            config.write(file)
