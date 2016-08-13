@@ -48,6 +48,7 @@ class CalendarConfig <<Persist>> {
     url
     name
     notify_channel_id
+    verified
 }
 
 Calendar *- CalendarConfig
@@ -94,6 +95,7 @@ from datetime import time
 
 TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
 CALENDAR_URL = 'https://calendar.google.com/calendar/ical/aqclsibjm591jbbk875uio9k40%40group.calendar.google.com/public/basic.ics'
+CHANNEL_ID = '@gelintestchannel'
 # CALENDAR_URL = 'https://calendar.google.com/calendar/ical/rvsmtm05j6qc2126epnngu9kq0%40group.calendar.google.com/private-5d15121a99e8d543ae656471323b26e7/basic.ics'
 # TODO read from config files
 
@@ -121,12 +123,24 @@ class Config:
         self.interval = 3600
         """the interval to reread calendars, in seconds"""
 
+    def add_calendar(self, user_id, url, channel_id):
+        """
+        Adds the calendar to the persisted list
+        :param user_id: id of the user for which the calendar is persisted
+        :param url: URL of the ical file
+        :param channel_id: ID of the channel where to send calendar events
+        :return: CalendarConfig instance
+        """
+        next_id = '1'     # TODO
+        calendar = CalendarConfig(self, next_id, user_id, url, channel_id)
+        return calendar
+
     def calendars(self):
         """
         Returns list of all known and monitoring calendars
         :return: list of CalendarConfig
         """
-        return [CalendarConfig(self, CALENDAR_URL)]   # TODO more calendars
+        return [CalendarConfig(self, '1', 'TEST', CALENDAR_URL, CHANNEL_ID)]   # TODO more calendars
 
 
 class CalendarConfig:
@@ -134,21 +148,27 @@ class CalendarConfig:
     Current calendar state.
     """
 
-    def __init__(self, config, url):
+    def __init__(self, config, id, user_id, url, channel_id):
         self.vardir = config.vardir
         """Base var directory"""
-        self.id = '1'
+        self.interval = config.interval
+        """Update interval for the calendar"""
+        self.id = id
         """Current calendar ID"""
-        self.user_id = 'TEST'
+        self.user_id = user_id
         """Chat ID of the user to whom this calendar belongs to"""
         self.url = url
-        """url of the ical file to download"""
+        """Url of the ical file to download"""
+        self.channel_id = channel_id
+        """Channel where to broadcast calendar events"""
+        self.verified = False
+        """Flag indicating should the calendar fetching errors be sent to user"""
         self.advance = [24, 48]     # TODO read from files
-        """array of the numbers: how many hours in advance notify about the event"""
+        """Array of the numbers: how many hours in advance notify about the event"""
         self.day_start = time(10, 0)
-        """when the day starts if the event has no specified time"""
+        """When the day starts if the event has no specified time"""
         self.events = {}
-        """dictionary of known configured events"""
+        """Dictionary of known configured events"""
         self.load_events()
 
     def load_events(self):

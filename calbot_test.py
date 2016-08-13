@@ -47,7 +47,7 @@ def test_format_event():
 
 
 def test_read_calendar():
-    config = CalendarConfig(Config('test'), 'file://{}/test.ics'.format(os.path.dirname(__file__)))
+    config = CalendarConfig(Config('test'), '1', 'TEST', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
     calendar = Calendar(config)
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'TEST' == calendar.name, calendar.name
