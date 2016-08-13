@@ -21,11 +21,11 @@
 import logging
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
-from telegram.ext import MessageHandler, Filters
+from telegram.ext import MessageHandler
+from telegram.ext import Filters
+from telegram.ext import Job
 from .ical import Calendar
 
-
-CHAT_ID = '@gelintestchannel'
 FORMAT = '''{title}
 {date:%A, %d %B %Y, %H:%M %Z}
 {location}
@@ -49,12 +49,16 @@ logger = logging.getLogger('bot')
 
 def run_bot(config):
     updater = Updater(config.token)
-    job_queue = updater.job_queue
 
     dispatcher = updater.dispatcher
 
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', start))
+
+    def add_calendar_to_config(bot, update, args, job_queue):
+        add_calendar(bot, update, args, job_queue, config)
+    dispatcher.add_handler(CommandHandler('add', add_calendar_to_config, allow_edited=True, pass_args=True, pass_job_queue=True))
+
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
     dispatcher.add_error_handler(error)
@@ -63,19 +67,39 @@ def run_bot(config):
 
     start_delay = 0
     for calendar in config.calendars():
-
-        def update_this_calendar(bot):
-            update_calendar(bot, calendar)
-
-        job_queue.put(update_this_calendar, interval=config.interval, next_t=start_delay, repeat=True)
+        queue_calendar_update(updater.job_queue, calendar, start_delay)
         start_delay += 10
 
     updater.idle()
 
 
+def queue_calendar_update(job_queue, calendar, start_delay=0):
+    def update_this_calendar(bot, job):
+        update_calendar(bot, calendar)
+    job = Job(update_this_calendar, calendar.interval, repeat=True)
+    job_queue.put(job, next_t=start_delay)
+
+
 def start(bot, update):
     logger.info('started from %s', update.message.chat_id)
     bot.sendMessage(chat_id=update.message.chat_id, text=GREETING)
+
+
+def add_calendar(bot, update, args, job_queue, config):
+    chat_id = update.message.chat_id
+    user_id = str(chat_id)
+    if len(args) < 2:
+        bot.sendMessage(chat_id=chat_id,
+                        text="Please provide two arguments to /add command:\n/add ical_url @channel")
+        return
+
+    url = args[0]
+    channel_id = args[1]
+    calendar = config.add_calendar(user_id, url, channel_id)
+    queue_calendar_update(job_queue, calendar)
+
+    bot.sendMessage(chat_id=chat_id,
+                    text="Calendar %s is queued for verification" % url)
 
 
 def unknown(bot, update):
@@ -100,7 +124,3 @@ def send_event(bot, event):
 
 def format_event(event):
     return FORMAT.format(**event.to_dict())
-
-
-def add_event_job(event):
-    pass
