@@ -4,3 +4,11 @@
 
 - name: install python3-pip
   apt: name=python3-pip state=present
+
+#- name: install secondary dependencies
+#  apt:
+#    name: '{{ item }}'
+#    state: present
+#  with_items:
+#      - 'python3-urllib3'
+

@@ -1,2 +1,2 @@
-python-telegram-bot
-icalendar
+python-telegram-bot == 5.0.0
+icalendar == 3.8
