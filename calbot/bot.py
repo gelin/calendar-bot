@@ -86,10 +86,9 @@ def start(bot, update):
 
 
 def add_calendar(bot, update, args, job_queue, config):
-    chat_id = update.message.chat_id
-    user_id = str(chat_id)
+    user_id = str(update.message.chat_id)
     if len(args) < 2:
-        bot.sendMessage(chat_id=chat_id,
+        bot.sendMessage(chat_id=user_id,
                         text="Please provide two arguments to /add command:\n/add ical_url @channel")
         return
 
@@ -98,7 +97,7 @@ def add_calendar(bot, update, args, job_queue, config):
     calendar = config.add_calendar(user_id, url, channel_id)
     queue_calendar_update(job_queue, calendar)
 
-    bot.sendMessage(chat_id=chat_id,
+    bot.sendMessage(chat_id=user_id,
                     text="Calendar %s is queued for verification" % url)
 
 
@@ -107,19 +106,31 @@ def unknown(bot, update):
 
 
 def error(bot, update, error):
-    logger.warn('Update "%s" caused error "%s"' % (update, error))
+    logger.warning('Update "%s" caused error "%s"' % (update, error))
 
 
 def update_calendar(bot, config):
-    calendar = Calendar(config)
-    for event in calendar.events:
-        send_event(bot, event)
-        config.event_notified(event)
-    config.save_events()
+    try:
+        calendar = Calendar(config)
+        for event in calendar.events:
+            send_event(bot, config.channel_id, event)
+            config.event_notified(event)
+        config.save_events()
+        bot.sendMessage(chat_id=config.channel_id,
+                        text='Events from %s will be notified here' % calendar.name)
+        if not config.verified:
+            config.save_calendar(calendar)
+            bot.sendMessage(chat_id=config.user_id,
+                            text='Added:\n%s %s %s' % (config.id, config.name, config.channel_id))
+    except Exception as e:
+        logger.warning('Failed to process %s', config.url, exc_info=True)
+        if not config.verified:
+            bot.sendMessage(chat_id=config.user_id,
+                            text='Failed to process %s:\n%s' % (config.url, e))
 
 
-def send_event(bot, event):
-    bot.sendMessage(chat_id=CHAT_ID, text=format_event(event))
+def send_event(bot, channel_id, event):
+    bot.sendMessage(chat_id=channel_id, text=format_event(event))
 
 
 def format_event(event):
