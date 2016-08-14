@@ -179,6 +179,21 @@ class Config:
 
         return calendar
 
+    def delete_calendar(self, user_id, calendar_id):
+        """
+        Deleted the calendar from the persisted list
+        :param user_id: id of the user
+        :param calendar_id: id of the calendar
+        :return: None
+        """
+        config = ConfigParser(interpolation=None)
+        config_file = CalendarsConfigFile(self.vardir, user_id)
+        config_file.read(config)
+        if not config.has_section(calendar_id):
+            raise KeyError('%s not found' % calendar_id)
+        config.remove_section(calendar_id)
+        config_file.write(config)
+
 
 class CalendarConfig:
     """

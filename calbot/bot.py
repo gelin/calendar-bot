@@ -62,11 +62,18 @@ def run_bot(config):
 
     def add_calendar_to_config(bot, update, args, job_queue):
         add_calendar(bot, update, args, job_queue, config)
-    dispatcher.add_handler(CommandHandler('add', add_calendar_to_config, allow_edited=True, pass_args=True, pass_job_queue=True))
+    dispatcher.add_handler(CommandHandler('add', add_calendar_to_config,
+                                          allow_edited=True, pass_args=True, pass_job_queue=True))
 
     def list_calendars_from_config(bot, update):
         list_calendars(bot, update, config)
-    dispatcher.add_handler(CommandHandler('list', list_calendars_from_config))
+    dispatcher.add_handler(CommandHandler('list', list_calendars_from_config,
+                                          allow_edited=True))
+
+    def delete_calendar_from_config(bot, update, args, job_queue):
+        delete_calendar(bot, update, args, job_queue, config)
+    dispatcher.add_handler(CommandHandler('del', delete_calendar_from_config,
+                                          allow_edited=True, pass_args=True, pass_job_queue=True))
 
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
@@ -90,9 +97,7 @@ def queue_calendar_update(job_queue, calendar, start_delay=0):
     :param start_delay: delay start of immediate calendar processing for specified number of seconds
     :return: None
     """
-    def update_this_calendar(bot, job):
-        update_calendar(bot, calendar)
-    job = Job(update_this_calendar, calendar.interval, repeat=True)
+    job = Job(update_calendar, calendar.interval, repeat=True, context=calendar)
     job_queue.put(job, next_t=start_delay)
 
 
@@ -142,11 +147,44 @@ def list_calendars(bot, update, config):
     :param config: Config instance to read list of user's calendars
     :return: None
     """
-    user_id = str(update.message.chat_id)
-    message = 'ID\tNAME\tCHANNEL\n'
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    text = 'ID\tNAME\tCHANNEL\n'
     for calendar in config.user_calendars(user_id):
-        message += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
-    bot.sendMessage(chat_id=user_id, text=message)
+        text += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
+    bot.sendMessage(chat_id=user_id, text=text)
+
+
+def delete_calendar(bot, update, args, job_queue, config):
+    """
+    /del command handler.
+    Removes the calendar from the persisted config and from job queue by it's id.
+    :param bot: Bot instance
+    :param update: Update instance
+    :param args: command arguments: url and channel_id
+    :param job_queue: JobQueue instance to add calendar update job
+    :param config: Config instance to persist calendar
+    :return: None
+    """
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    if len(args) < 1:
+        bot.sendMessage(chat_id=user_id,
+                        text="Please provide the calendar id to /del command:\n/del calendar_id")
+        return
+    calendar_id = args[0]
+
+    try:
+        config.delete_calendar(user_id, calendar_id)
+        for job in job_queue.jobs():
+            if job.context.id == calendar_id:
+                job.schedule_removal()
+        bot.sendMessage(chat_id=user_id,
+                        text="Calendar %s is deleted" % calendar_id)
+    except Exception as e:
+        logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
+        bot.sendMessage(chat_id=user_id,
+                        text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
 
 
 def unknown(bot, update):
@@ -170,15 +208,16 @@ def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"' % (update, error))
 
 
-def update_calendar(bot, config):
+def update_calendar(bot, job):
     """
     Job queue callback to update data from the calendar.
     Reads ical file and notifies events if necessary.
     After the first successful read the calendar is marked as validated.
     :param bot: Bot instance
-    :param config: CalendarConfig instance to persist and update events notification status
+    :param job: it's context has CalendarConfig instance to persist and update events notification status
     :return: None
     """
+    config = job.context
     try:
         calendar = Calendar(config)
         for event in calendar.events:
@@ -192,10 +231,10 @@ def update_calendar(bot, config):
             bot.sendMessage(chat_id=config.user_id,
                             text='Added:\n%s\t%s\t%s' % (config.id, config.name, config.channel_id))
     except Exception as e:
-        logger.warning('Failed to process %s', config.url, exc_info=True)
+        logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
         if not config.verified:
             bot.sendMessage(chat_id=config.user_id,
-                            text='Failed to process %s:\n%s' % (config.url, e))
+                            text='Failed to process calendar %s:\n%s' % (config.id, e))
 
 
 def send_event(bot, channel_id, event):
