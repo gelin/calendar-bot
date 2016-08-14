@@ -172,19 +172,19 @@ def delete_calendar(bot, update, args, job_queue, config):
         bot.sendMessage(chat_id=user_id,
                         text="Please provide the calendar id to /del command:\n/del calendar_id")
         return
-    calendar_id = args[0]
 
-    try:
-        config.delete_calendar(user_id, calendar_id)
-        for job in job_queue.jobs():
-            if job.context.id == calendar_id:
-                job.schedule_removal()
-        bot.sendMessage(chat_id=user_id,
-                        text="Calendar %s is deleted" % calendar_id)
-    except Exception as e:
-        logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
-        bot.sendMessage(chat_id=user_id,
-                        text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
+    for calendar_id in args:
+        try:
+            config.delete_calendar(user_id, calendar_id)
+            for job in job_queue.jobs():
+                if job.context.id == calendar_id:
+                    job.schedule_removal()
+            bot.sendMessage(chat_id=user_id,
+                            text="Calendar %s is deleted" % calendar_id)
+        except Exception as e:
+            logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
+            bot.sendMessage(chat_id=user_id,
+                            text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
 
 
 def unknown(bot, update):
