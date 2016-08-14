@@ -116,18 +116,28 @@ class Config:
         self.interval = 3600
         """the interval to reread calendars, in seconds"""
 
-    def calendars(self):
+    def user_calendars(self, user_id):
         """
-        Returns list of all known and monitoring calendars
+        Returns list of calendars configured for the user
+        :param user_id: id of the user to list calendars
+        :return: list of CalendarConfig
+        """
+        for calendar in self.load_calendars(user_id):
+            yield calendar
+
+    def all_calendars(self):
+        """
+        Returns list of all known and monitoring calendars with events
         :return: list of CalendarConfig
         """
         for entry in os.scandir(self.vardir):
             if not entry.name.startswith('.') and entry.is_dir():
                 user_id = entry.name
-                for calendar in self.read_calendars(user_id):
+                for calendar in self.load_calendars(user_id):
+                    calendar.load_events()
                     yield calendar
 
-    def read_calendars(self, user_id):
+    def load_calendars(self, user_id):
         config = ConfigParser(interpolation=None)
         config_file = CalendarsConfigFile(self.vardir, user_id)
         config_file.read(config)
@@ -139,6 +149,7 @@ class Config:
                                           config.get(section, 'url'),
                                           config.get(section, 'channel_id'))
                 calendar.verified = config.getboolean(section, 'verified')
+                calendar.name = config.get(section, 'name', fallback=('Unknown' if calendar.verified else 'Unverified'))
                 yield calendar
 
     def add_calendar(self, user_id, url, channel_id):
@@ -197,7 +208,6 @@ class CalendarConfig:
         """When the day starts if the event has no specified time"""
         self.events = {}
         """Dictionary of known configured events"""
-        self.load_events()
 
     def load_events(self):
         config = ConfigParser(interpolation=None)
