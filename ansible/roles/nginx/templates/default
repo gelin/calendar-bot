@@ -1,0 +1,18 @@
+server {
+    listen 80;
+    listen 443 ssl default_server;
+    ssl_certificate /etc/letsencrypt/{{ domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/{{ domain }}/chain.pem;
+
+    server_name  {{ domain }};
+
+    location /.well-known {
+        root /var/www/html;
+    }
+
+    location /{{ token }} {
+        proxy_pass http://[::1]:{{ webhook_port }};
+    }
+
+}

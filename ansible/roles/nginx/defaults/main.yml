@@ -1,0 +1,4 @@
+---
+  domain: calbot.telegram.gelin.ru
+  token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+  webhook_port: 5000
