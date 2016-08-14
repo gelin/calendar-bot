@@ -6,5 +6,5 @@
   roles:
     - common
     - python
-#    - nginx
+    - nginx
 #    - letsencrypt
