@@ -52,7 +52,7 @@ class Calendar:
         self.all_events = list(self.read_ical(self.url))
         """list of all calendar events, from ical file"""
         future_events = filter_future_events(self.all_events, max(self.advance))
-        self.events = list(filter_notified_events(future_events, config))
+        self.events = list(filter_notified_events(future_events, config))   # TODO sort by date
         """list of calendar events which should be notified, filtered from ical file"""
 
     def read_ical(self, url):

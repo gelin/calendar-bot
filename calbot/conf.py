@@ -130,9 +130,9 @@ class Config:
         Returns list of all known and monitoring calendars with events
         :return: list of CalendarConfig
         """
-        for entry in os.scandir(self.vardir):
-            if not entry.name.startswith('.') and entry.is_dir():
-                user_id = entry.name
+        for name in os.listdir(self.vardir):
+            if os.path.isdir(os.path.join(self.vardir, name)):
+                user_id = name
                 for calendar in self.load_calendars(user_id):
                     calendar.load_events()
                     yield calendar
