@@ -31,7 +31,7 @@
 
 - name: install systemd service
   template:
-    src: calbot.service
+    src: bot.service
     dest: '/etc/systemd/system/{{ bot_service }}.service'
   notify: update systemd
 

@@ -5,15 +5,15 @@
 - name: install iptables-persistent
   apt: name=iptables-persistent state=present
 
-- name: Set up iptables rules
+- name: set up iptables rules
   copy: src=iptables.rules.v4 dest=/etc/iptables/rules.v4
   notify: restart iptables
 
-- name: Set up ip6tables rules
+- name: set up ip6tables rules
   copy: src=iptables.rules.v6 dest=/etc/iptables/rules.v6
   notify: restart iptables
 
-- name: Set timezone variables
+- name: set timezone variables
   copy: content='Asia/Omsk'
         dest=/etc/timezone
         owner=root
@@ -24,3 +24,9 @@
 
 - name: install ntp
   apt: name=ntp state=present
+
+- name: configure locales
+  locale_gen: name=en_US.UTF-8 state=present
+
+- name: install cron
+  apt: name=cron state=present

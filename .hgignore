@@ -6,3 +6,5 @@ syntax: glob
 *.retry
 
 var/*
+
+ansible/group_vars/*.yml

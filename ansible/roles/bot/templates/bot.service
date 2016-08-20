@@ -1,5 +1,5 @@
 [Unit]
-Description=Calendar bot
+Description={{ bot_description }}
 
 [Service]
 Type=simple
