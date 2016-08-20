@@ -1,6 +1,6 @@
 ---
-  bot_user: calbot
-  bot_group: calbot
-  bot_dir: /opt/calbot
-  bot_service: calbot
-
+bot_user: bot
+bot_group: bot
+bot_dir: /opt/bot
+bot_service: bot
+bot_description: 'Telegram bot'

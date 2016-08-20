@@ -7,4 +7,5 @@
     - common
     - python
     - nginx
-#    - letsencrypt
+    - letsencrypt
+    - nginx-bot
