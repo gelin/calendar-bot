@@ -4,6 +4,7 @@ vardir = var
 interval = 3600
 
 [webhook]
+webhook = yes
 domain = bot.example.com
-listen = [::1]
+listen = 127.0.0.1
 port = 5000
