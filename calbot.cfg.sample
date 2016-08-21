@@ -1,0 +1,9 @@
+[bot]
+token = 225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY
+vardir = var
+interval = 3600
+
+[webhook]
+domain = bot.example.com
+listen = [::1]
+port = 5000

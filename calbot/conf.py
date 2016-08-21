@@ -93,9 +93,6 @@ import logging
 import os
 from datetime import time
 
-TOKEN = '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-# TODO read from config files
-
 
 __all__ = ['Config']
 
@@ -108,12 +105,18 @@ class Config:
     Main config, read from the file.
     """
 
-    def __init__(self, vardir):
-        self.vardir = vardir
+    def __init__(self, configfile):
+        """
+        Creates the config
+        :param configfile: location of main config file
+        """
+        config = ConfigParser()
+        config.read(configfile)
+        self.vardir = config.get('bot', 'vardir')
         """path to var directory, where current state is stored"""
-        self.token = TOKEN
+        self.token = config.get('bot', 'token')
         """the bot token"""
-        self.interval = 3600
+        self.interval = config.getint('bot', 'interval', fallback=3600)
         """the interval to reread calendars, in seconds"""
 
     def user_calendars(self, user_id):

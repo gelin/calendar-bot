@@ -20,12 +20,19 @@
 
 
 import logging
+import os
+import sys
+
 from calbot.bot import run_bot
 from calbot.conf import Config
 
 
 def main():
-    config = Config('var')
+    if len(sys.argv) > 1:
+        configfile = sys.argv[1]
+    else:
+        configfile = os.path.join(os.path.dirname(__file__), 'calbot.cfg')
+    config = Config(configfile)
     run_bot(config)
 
 
