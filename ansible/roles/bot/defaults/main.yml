@@ -5,5 +5,5 @@ bot_dir: /opt/bot
 bot_service: bot
 bot_description: 'Telegram bot'
 token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-webhook_listen: '[::1]'
+webhook_listen: '127.0.0.1'
 webhook_port: 5000

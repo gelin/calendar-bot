@@ -118,6 +118,13 @@ class Config:
         """the bot token"""
         self.interval = config.getint('bot', 'interval', fallback=3600)
         """the interval to reread calendars, in seconds"""
+        self.webhook = config.getboolean('webhook', 'webhook', fallback=False)
+        """use webhook or not"""
+        self.domain = config.get('webhook', 'domain', fallback=None)
+        """public domain where the webhook of the bot is listening"""
+        self.listen = config.get('webhook', 'listen', fallback='[::1]')
+        """IP address to listen by webhook"""
+        self.port = config.getint('webhook', 'port', fallback=5000)
 
     def user_calendars(self, user_id):
         """
