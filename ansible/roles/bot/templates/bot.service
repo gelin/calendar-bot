@@ -3,7 +3,7 @@ Description={{ bot_description }}
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 {{ bot_dir }}/calbot.py
+ExecStart=/usr/bin/python3 {{ bot_dir }}/calbot.py {{ bot_dir }}/{{ bot_service }}.cfg
 WorkingDirectory={{ bot_dir }}
 User={{ bot_user }}
 Group={{ bot_group }}

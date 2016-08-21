@@ -29,9 +29,14 @@
     requirements: '{{ bot_dir }}/requirements.txt'
   notify: restart bot
 
+- name: create config
+  template:
+    src: bot.cfg
+    dest: '{{ bot_dir }}/{{ bot_service }}.cfg'
+  notify: restart bot
+
 - name: install systemd service
   template:
     src: bot.service
     dest: '/etc/systemd/system/{{ bot_service }}.service'
   notify: update systemd
-
