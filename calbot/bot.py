@@ -80,14 +80,15 @@ def run_bot(config):
     dispatcher.add_error_handler(error)
 
     if config.webhook:
+        webhook_url = 'https://%s/%s' % (config.domain, config.token)
         updater.start_webhook(listen=config.listen, port=config.port,
-                              url_path=config.token,
-                              webhook_url='https://%s/%s' % (config.domain, config.token),
-                              clean=True)
-        # updater.bot.set_webhook('https://%s/%s' % (config.domain, config.token))
-        # updater.idle()
+                              url_path=config.token, webhook_url=webhook_url)
+        logger.info('started webhook on %s:%s' % (config.listen, config.port))
+        updater.bot.set_webhook(webhook_url)
+        logger.info('set webhook to %s' % webhook_url)
     else:
         updater.start_polling(clean=True)
+        logger.info('started polling')
 
     start_delay = 0
     for calendar in config.all_calendars():

@@ -2,6 +2,11 @@
 - name: install nginx
   apt: name=nginx state=present
 
+- name: generate DH params
+  command: openssl dhparam -out /etc/nginx/dhparams.pem 2048
+  args:
+    creates: /etc/nginx/dhparams.pem
+
 - name: copy nginx configuration
   template: src=config dest=/etc/nginx/sites-available/{{ site_config }}
   notify: restart nginx
