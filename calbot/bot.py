@@ -153,7 +153,7 @@ def list_calendars(bot, update, config):
     """
     message = update.message or update.edited_message
     user_id = str(message.chat_id)
-    text = 'ID\tNAME\tCHANNEL\n'
+    text = 'ID\tNAME\tCHANNEL\n'        # TODO: HTML formatting?
     for calendar in config.user_calendars(user_id):
         text += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
     bot.sendMessage(chat_id=user_id, text=text)

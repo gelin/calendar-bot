@@ -1,12 +1,11 @@
 [Unit]
-Description={{ bot_description }}
+Description={{ bot.service_description }}
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 {{ bot_dir }}/calbot.py {{ bot_dir }}/{{ bot_service }}.cfg
-WorkingDirectory={{ bot_dir }}
-User={{ bot_user }}
-Group={{ bot_group }}
+ExecStart=/usr/bin/python3 {{ bot.basedir }}/calbot.py {{ bot.basedir }}/{{ bot.service_name }}.cfg
+WorkingDirectory={{ bot.basedir }}
+User={{ bot.user }}
 
 [Install]
 WantedBy=multi-user.target

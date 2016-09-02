@@ -14,7 +14,7 @@
   notify: restart iptables
 
 - name: set timezone variables
-  copy: content='Asia/Omsk'
+  copy: content="Asia/Omsk\n"
         dest=/etc/timezone
         owner=root
         group=root
