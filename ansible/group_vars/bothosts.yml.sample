@@ -1,13 +1,14 @@
 ---
-domain: bot.telegram.example.com
-token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-webhook_port: 5000
-site_config: bot
-bot_user: bot
-bot_group: bot
-bot_dir: /opt/bot
-bot_service: bot
-bot_description: 'Telegram bot'
+bot:
+  domain: bot.telegram.example.com
+  token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+  webhook_listen: 127.0.0.1
+  webhook_port: 5000
+  site_config: bot
+  user: bot
+  basedir: /opt/bot
+  service_name: bot
+  service_description: 'Telegram bot'
 letsencrypt_cert_domains:
-  - "bot.telegram.example.com"
+  - "{{ bot.domain }}"
 letsencrypt_email: "webmaster@example.com"

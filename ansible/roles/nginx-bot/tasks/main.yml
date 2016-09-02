@@ -8,9 +8,9 @@
     creates: /etc/nginx/dhparams.pem
 
 - name: copy nginx configuration
-  template: src=config dest=/etc/nginx/sites-available/{{ site_config }}
+  template: src=config dest=/etc/nginx/sites-available/{{ bot.site_config }}
   notify: restart nginx
 
 - name: enable nginx configuration
-  file: src=/etc/nginx/sites-available/{{ site_config }} dest=/etc/nginx/sites-enabled/{{ site_config }} state=link
+  file: src=/etc/nginx/sites-available/{{ bot.site_config }} dest=/etc/nginx/sites-enabled/{{ bot.site_config }} state=link
   notify: restart nginx
