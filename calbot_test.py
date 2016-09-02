@@ -26,7 +26,7 @@ import pytz
 from icalendar.cal import Component
 
 from calbot.bot import format_event
-from calbot.conf import CalendarConfig, Config
+from calbot.conf import CalendarConfig, Config, UserConfig, DEFAULT_FORMAT
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 
 
@@ -42,12 +42,12 @@ def test_format_event():
     component = _get_component()
     component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
     event = Event(component, pytz.UTC)
-    result = format_event(event)
+    result = format_event(DEFAULT_FORMAT, event)
     assert 'summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription\n' == result, result
 
 
 def test_read_calendar():
-    config = CalendarConfig(Config('calbot.cfg.sample'), '1', 'TEST', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    config = CalendarConfig.new(UserConfig.new(Config('calbot.cfg.sample'), 'TEST'), '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
     calendar = Calendar(config)
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'TEST' == calendar.name, calendar.name
@@ -112,3 +112,22 @@ def test_date_only_event():
     assert 10 == event.date.hour, event.date
     assert 0 == event.date.minute, event.date
     assert pytz.UTC == event.date.tzinfo, event.date
+
+
+def test_default_user_confg():
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    assert user_config.vardir == 'var'
+    assert user_config.interval == 3600
+    assert user_config.id == 'TEST'
+    assert user_config.format == DEFAULT_FORMAT
+    assert user_config.language is None
+    assert user_config.advance == [24, 48]
+
+
+def test_default_calendar_config():
+    calendar_config = CalendarConfig.new(
+        UserConfig.new(
+            Config('calbot.cfg.sample'),
+            'TEST'),
+        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    assert calendar_config.advance == [24, 48]

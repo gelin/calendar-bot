@@ -26,11 +26,6 @@ from telegram.ext import Filters
 from telegram.ext import Job
 from .ical import Calendar
 
-FORMAT = '''{title}
-{date:%A, %d %B %Y, %H:%M %Z}
-{location}
-{description}
-'''
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — to add new iCal to be sent to a channel
@@ -230,7 +225,7 @@ def update_calendar(bot, job):
     try:
         calendar = Calendar(config)
         for event in calendar.events:
-            send_event(bot, config.channel_id, event)
+            send_event(bot, config.channel_id, event, config.format)
             config.event_notified(event)
         config.save_events()
         if not config.verified:
@@ -246,21 +241,23 @@ def update_calendar(bot, job):
                             text='Failed to process calendar %s:\n%s' % (config.id, e))
 
 
-def send_event(bot, channel_id, event):
+def send_event(bot, channel_id, event, format):
     """
     Sends the event notification to the channel
     :param bot: Bot instance
     :param channel_id: channel_id where to notify
     :param event: Event instance, read from ical
+    :param format: format string
     :return: None
     """
-    bot.sendMessage(chat_id=channel_id, text=format_event(event))
+    bot.sendMessage(chat_id=channel_id, text=format_event(format, event))
 
 
-def format_event(event):
+def format_event(format, event):
     """
     Formats the event for notification
+    :param format: format string
     :param event: Event instance
     :return: formatted string
     """
-    return FORMAT.format(**event.to_dict())
+    return format.format(**event.to_dict())
