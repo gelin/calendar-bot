@@ -85,6 +85,8 @@ class Event:
         """title of the event"""
         self.date = None
         """calendar event datetime"""
+        # TODO: check events with different timezone
+        # TODO: separate date and time to different fields, time can be None
         try:
             self.date = vevent.get('DTSTART').dt.astimezone(timezone)
         except:

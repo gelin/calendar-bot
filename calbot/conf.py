@@ -100,6 +100,15 @@ __all__ = ['Config']
 logger = logging.getLogger('conf')
 
 
+DEFAULT_FORMAT = '''{title}
+{date:%A, %d %B %Y, %H:%M %Z}
+{location}
+{description}
+'''
+
+DEFAULT_ADVANCE = [24, 48]
+
+
 class Config:
     """
     Main config, read from the file.
@@ -147,19 +156,27 @@ class Config:
                     calendar.load_events()
                     yield calendar
 
+    def load_user(self, user_id):
+        """
+        Loads UserConfig
+        :param user_id: ID of the user
+        :return: UserConfig instance
+        """
+        parser = UserConfigFile(self.vardir, user_id).read_parser()
+        return UserConfig.load(self, user_id, parser)
+
     def load_calendars(self, user_id):
-        config = ConfigParser(interpolation=None)
-        config_file = CalendarsConfigFile(self.vardir, user_id)
-        config_file.read(config)
-        for section in config.sections():
+        """
+        Loads all calendars of the specified user.
+        :param user_id: ID of the user
+        :return: yields the CalendarConfig instances
+        """
+        user_config = self.load_user(user_id)
+        calendar_parser = CalendarsConfigFile(self.vardir, user_id).read_parser()
+
+        for section in calendar_parser.sections():
             if section != 'settings':
-                calendar = CalendarConfig(self,
-                                          section,
-                                          user_id,
-                                          config.get(section, 'url'),
-                                          config.get(section, 'channel_id'))
-                calendar.verified = config.getboolean(section, 'verified')
-                calendar.name = config.get(section, 'name', fallback=('Unknown' if calendar.verified else 'Unverified'))
+                calendar = CalendarConfig.load(user_config, calendar_parser, section)
                 yield calendar
 
     def add_calendar(self, user_id, url, channel_id):
@@ -170,22 +187,23 @@ class Config:
         :param channel_id: ID of the channel where to send calendar events
         :return: CalendarConfig instance
         """
-        config = ConfigParser(interpolation=None)
-        config_file = CalendarsConfigFile(self.vardir, user_id)
-        config_file.read(config)
+        calendar_config_file = CalendarsConfigFile(self.vardir, user_id)
+        calendar_parser = calendar_config_file.read_parser()
+        user_parser = UserConfigFile(self.vardir, user_id).read_parser()
+        user = UserConfig.load(self, user_id, user_parser)
 
-        next_id = str(config.getint('settings', 'last_id', fallback=0) + 1)
-        if not config.has_section('settings'):
-            config.add_section('settings')
-        config.set('settings', 'last_id', next_id)
+        next_id = str(calendar_parser.getint('settings', 'last_id', fallback=0) + 1)
+        if not calendar_parser.has_section('settings'):
+            calendar_parser.add_section('settings')
+        calendar_parser.set('settings', 'last_id', next_id)
 
-        calendar = CalendarConfig(self, next_id, user_id, url, channel_id)
-        config.add_section(next_id)
-        config.set(next_id, 'url', url)
-        config.set(next_id, 'channel_id', channel_id)
-        config.set(next_id, 'verified', 'false')
+        calendar = CalendarConfig.new(user, next_id, url, channel_id)
+        calendar_parser.add_section(next_id)
+        calendar_parser.set(next_id, 'url', url)
+        calendar_parser.set(next_id, 'channel_id', channel_id)
+        calendar_parser.set(next_id, 'verified', 'false')
 
-        config_file.write(config)
+        calendar_config_file.write(calendar_parser)
 
         return calendar
 
@@ -196,50 +214,162 @@ class Config:
         :param calendar_id: id of the calendar
         :return: None
         """
-        config = ConfigParser(interpolation=None)
         config_file = CalendarsConfigFile(self.vardir, user_id)
-        config_file.read(config)
-        if not config.has_section(calendar_id):
+        config_parser = config_file.read_parser()
+
+        if not config_parser.has_section(calendar_id):
             raise KeyError('%s not found' % calendar_id)
-        config.remove_section(calendar_id)
-        config_file.write(config)
+        config_parser.remove_section(calendar_id)
+
+        config_file.write(config_parser)
+
+
+class UserConfig:
+    """
+    Per-user configuration parameters.
+    """
+
+    def __init__(self, **kwargs):
+        self.vardir = kwargs['vardir']
+        """Base var directory"""
+        self.interval = kwargs['interval']
+        """Update interval for the calendar"""
+        self.id = kwargs['user_id']
+        """ID of the user"""
+        self.format = kwargs['format']
+        """Event message format for the user"""
+        self.language = kwargs['language']
+        """Language to format the event"""
+        self.advance = kwargs['advance']
+        """Array of hours for advance the calendar event"""
+
+    @classmethod
+    def new(cls, config, user_id):
+        """
+        Creates the new config, when there is nothing to read from settings.cfg file
+        :param config: main config instance
+        :param user_id: ID of the user
+        :return: UserConfig instance
+        """
+        return cls(
+            vardir=config.vardir,
+            interval=config.interval,
+            user_id=user_id,
+            format=DEFAULT_FORMAT,
+            language=None,
+            advance=DEFAULT_ADVANCE,
+        )
+
+    @classmethod
+    def load(cls, config, user_id, config_parser):
+        """
+        Loads the config from the ConfigParser
+        :param config: main config instance
+        :param user_id: ID of the user
+        :param config_parser: ConfigParser which read the user settings.cfg file
+        :return: UserConfig instance
+        """
+        return cls(
+            vardir=config.vardir,
+            interval=config.interval,
+            user_id=user_id,
+            format=config_parser.get('settings', 'format', fallback=DEFAULT_FORMAT),
+            language=config_parser.get('settings', 'language', fallback=None),
+            advance=list(
+                map(int,
+                    config_parser.get('settings', 'advance', fallback=' '.join(map(str, DEFAULT_ADVANCE))).split())
+            )
+        )
 
 
 class CalendarConfig:
     """
-    Current calendar state.
+    Current persisted calendar state.
     """
 
-    def __init__(self, config, id, user_id, url, channel_id):
-        self.vardir = config.vardir
+    def __init__(self, **kwargs):
+        self.vardir = kwargs['vardir']
         """Base var directory"""
-        self.interval = config.interval
+        self.interval = kwargs['interval']
         """Update interval for the calendar"""
-        self.id = id
+        self.id = kwargs['cal_id']
         """Current calendar ID"""
-        self.user_id = user_id
+        self.user_id = kwargs['user_id']
         """Chat ID of the user to whom this calendar belongs to"""
-        self.url = url
+        self.url = kwargs['url']
         """Url of the ical file to download"""
-        self.name = None
+        self.name = kwargs['name']
         """Human readable name of the calendar"""
-        self.channel_id = channel_id
+        self.channel_id = kwargs['channel_id']
         """Channel where to broadcast calendar events"""
-        self.verified = False
+        self.verified = kwargs['verified']
         """Flag indicating should the calendar fetching errors be sent to user"""
-        self.advance = [24, 48]     # TODO read from files
+        self.format = kwargs['format']
+        """Format string for the event"""
+        self.advance = kwargs['advance']
         """Array of the numbers: how many hours in advance notify about the event"""
         self.day_start = time(10, 0)
         """When the day starts if the event has no specified time"""
         self.events = {}
         """Dictionary of known configured events"""
 
+    @classmethod
+    def new(cls, user_config, cal_id, url, channel_id):
+        """
+        Creates the new calendar config, for just added calendar by an /add command
+        :param user_config: UserConfig instance
+        :param cal_id: ID for this calendar
+        :param url: URL of the calendar
+        :param channel_id: ID of the channel where to post calendar events
+        :return: CalendarConfig instance
+        """
+        return cls(
+            vardir=user_config.vardir,
+            interval=user_config.interval,
+            user_id=user_config.id,
+            format=user_config.format,
+            advance=user_config.advance,
+            cal_id=cal_id,
+            url=url,
+            name=None,
+            channel_id=channel_id,
+            verified=False,
+            )
+
+    @classmethod
+    def load(cls, user_config, config_parser, cal_id):
+        """
+        Creates the calendar config from the calendar.cfg file already read to ConfigParser
+        :param user_config: UserConfig instance
+        :param config_parser: ConfigParser which read calendars.cfg file
+        :param cal_id: ID of the calendar, used as name of the section in ConfigParser
+        :return: CalendarConfig instance
+        """
+        section = cal_id
+        verified = config_parser.getboolean(section, 'verified')
+        return cls(
+            vardir=user_config.vardir,
+            interval=user_config.interval,
+            user_id=user_config.id,
+            format=user_config.format,
+            advance=user_config.advance,
+            cal_id=cal_id,
+            url=config_parser.get(section, 'url'),
+            name=config_parser.get(section, 'name', fallback=('Unknown' if verified else 'Unverified')),
+            channel_id=config_parser.get(section, 'channel_id'),
+            verified=verified,
+            )
+
     def load_events(self):
-        config = ConfigParser(interpolation=None)
-        EventsConfigFile(self.vardir, self.user_id, self.id).read(config)
-        for event_id in config.sections():
+        """
+        Loads the calendar events from the events.cfg file.
+        :return: None
+        """
+        config_parser = EventsConfigFile(self.vardir, self.user_id, self.id).read_parser()
+
+        for event_id in config_parser.sections():
             event = EventConfig(self, event_id)
-            event.last_notified = config.getint(event_id, 'last_notified', fallback=None)
+            event.last_notified = config_parser.getint(event_id, 'last_notified', fallback=None)
             self.events[event_id] = event
 
     def event(self, id):
@@ -272,15 +402,14 @@ class CalendarConfig:
         :return: None
         """
         config_file = CalendarsConfigFile(self.vardir, self.user_id)
-        config = ConfigParser(interpolation=None)
-        config_file.read(config)
+        config_parser = config_file.read_parser()
 
         self.verified = True
-        config.set(self.id, 'verified', 'true')
+        config_parser.set(self.id, 'verified', 'true')
         self.name = calendar.name
-        config.set(self.id, 'name', calendar.name)
+        config_parser.set(self.id, 'name', calendar.name)
 
-        config_file.write(config)
+        config_file.write(config_parser)
 
     def save_events(self):
         """
@@ -289,9 +418,11 @@ class CalendarConfig:
         """
         config_file = EventsConfigFile(self.vardir, self.user_id, self.id)
         config = ConfigParser(interpolation=None)
+
         for event in self.events.values():
             config.add_section(event.id)
             config.set(event.id, 'last_notified', str(event.last_notified))
+
         config_file.write(config)
 
 
@@ -311,7 +442,61 @@ class EventConfig:
         """the last notification made for this event, as hours in advance, the integer or None"""
 
 
-class CalendarsConfigFile:
+class ConfigFile:
+    """
+    Reads and writes a config file.
+    """
+
+    def __init__(self, file_path):
+        """
+        Creates the config
+        :param file_path: path to the config file
+        """
+        self.path = file_path
+
+    def read(self, parser):
+        """
+        Reads the configuration from the file
+        :param parser: ConfigParser to be read from the file
+        :return: None
+        """
+        parser.read(self.path)
+
+    def read_parser(self):
+        """
+        Creates the new ConfigParser and read values from file to it
+        :return: ConfigParser instance
+        """
+        parser = ConfigParser(interpolation=None)
+        self.read(parser)
+        return parser
+
+    def write(self, parser):
+        """
+        Writes the configuration to the file. Creates dirs and files if necessary
+        :param parser: ConfigParser to be written
+        :return: None
+        """
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        with open(self.path, 'wt') as file:
+            parser.write(file)
+
+
+class UserConfigFile(ConfigFile):
+    """
+    Reads and writes user settings config file.
+    """
+
+    def __init__(self, vardir, user_id):
+        """
+        Creates the config
+        :param vardir: basic var dir
+        :param user_id: user ID as string
+        """
+        super().__init__(os.path.join(vardir, user_id, 'settings.cfg'))
+
+
+class CalendarsConfigFile(ConfigFile):
     """
     Reads and writes calendars config file.
     """
@@ -322,28 +507,10 @@ class CalendarsConfigFile:
         :param vardir: basic var dir
         :param user_id: user ID as string
         """
-        self.path = os.path.join(vardir, user_id, 'calendars.cfg')
-
-    def read(self, config):
-        """
-        Reads the configuration from the file
-        :param config: ConfigParser to be read from the file
-        :return: None
-        """
-        config.read(self.path)
-
-    def write(self, config):
-        """
-        Writes the configuration to the file. Creates dirs and files if necessary
-        :param config: ConfigParser to be written
-        :return: None
-        """
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, 'wt') as file:
-            config.write(file)
+        super().__init__(os.path.join(vardir, user_id, 'calendars.cfg'))
 
 
-class EventsConfigFile:
+class EventsConfigFile(ConfigFile):
     """
     Reads and writes events config file.
     """
@@ -355,22 +522,4 @@ class EventsConfigFile:
         :param user_id: user ID as string
         :param cal_id: ID of the calendar
         """
-        self.path = os.path.join(vardir, user_id, cal_id, 'events.cfg')
-
-    def read(self, config):
-        """
-        Reads the configuration from the file
-        :param config: ConfigParser to be read from the file
-        :return: None
-        """
-        config.read(self.path)
-
-    def write(self, config):
-        """
-        Writes the configuration to the file. Creates dirs and files if necessary
-        :param config: ConfigParser to be written
-        :return: None
-        """
-        os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, 'wt') as file:
-            config.write(file)
+        super().__init__(os.path.join(vardir, user_id, cal_id, 'events.cfg'))
