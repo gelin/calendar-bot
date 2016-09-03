@@ -25,7 +25,7 @@ import pytz
 import icalendar
 
 
-__all__ = ['Calendar']
+__all__ = ['Calendar', 'sample_event']
 
 
 logger = logging.getLogger('ical')
@@ -141,3 +141,13 @@ def filter_notified_events(events, config):
                 yield event
                 break
 
+
+def _get_sample_event():
+    component = icalendar.cal.Component()
+    component.add('summary', 'This is sample event')
+    component.add('location', 'It happens in the Milky Way')
+    component.add('description', 'The sample event is to demonstrate how the event can be formatted')
+    component.add('dtstart', datetime.now(tz=pytz.UTC))
+    return Event(component, pytz.UTC)
+
+sample_event = _get_sample_event()

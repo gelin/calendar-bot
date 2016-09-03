@@ -103,8 +103,7 @@ logger = logging.getLogger('conf')
 DEFAULT_FORMAT = '''{title}
 {date:%A, %d %B %Y, %H:%M %Z}
 {location}
-{description}
-'''
+{description}'''
 
 DEFAULT_ADVANCE = [24, 48]
 
