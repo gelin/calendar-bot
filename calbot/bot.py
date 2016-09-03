@@ -24,14 +24,15 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 from telegram.ext import Job
-from .ical import Calendar
+from .ical import Calendar, sample_event
 
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — to add new iCal to be sent to a channel
 /list — to see all configured calendars
 /del id — remove calendar by id
-/format [new format] — get or set a calendar event formatting, use {title}, {date}, {location} and {description} variables
+/format [new format] — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
+/lang [language] — get or set language to print the event, may affect the week day name
 /advance [hours...] — get or set calendar events advance, i.e. how many hours before the event to publish it
 '''
 
@@ -69,6 +70,11 @@ def run_bot(config):
         delete_calendar(bot, update, args, job_queue, config)
     dispatcher.add_handler(CommandHandler('del', delete_calendar_from_config,
                                           allow_edited=True, pass_args=True, pass_job_queue=True))
+
+    def get_set_format_with_config(bot, update):
+        get_set_format(bot, update, config)
+    dispatcher.add_handler(CommandHandler('format', get_set_format_with_config,
+                                          allow_edited=True))
 
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
@@ -189,6 +195,54 @@ def delete_calendar(bot, update, args, job_queue, config):
             logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
             bot.sendMessage(chat_id=user_id,
                             text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
+
+
+def get_set_format(bot, update, config):
+    """
+    /format command handler.
+    Prints the current format or sets the new format for the calendar event.
+    :param bot: Bot instance
+    :param update: Update instance
+    :param config: Config instance
+    :return: None
+    """
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    parts = message.text.split(' ', maxsplit=1)
+    if len(parts) < 2:
+        print_format(bot, user_id, config)
+    else:
+        new_format = parts[1]
+        set_format(bot, user_id, new_format, config)
+
+
+def print_format(bot, user_id, config):
+    """
+    Prints the current format
+    :param bot: Bot instance
+    :param user_id: ID of the user
+    :param config: Config instance
+    :return: None
+    """
+    user_config = config.load_user(user_id)
+    format = user_config.format
+    text = 'Current format:\n%s\nSample event:\n%s' % (     # TODO: HTML formatting?
+        format,
+        format_event(format, sample_event)
+    )
+    bot.sendMessage(chat_id=user_id, text=text)
+
+
+def set_format(bot, user_id, format, config):
+    """
+    Saves the new format for the user
+    :param bot: Bot instance
+    :param user_id: ID of the user
+    :param format: new format
+    :param config: Config instance
+    :return: None
+    """
+    # TODO
 
 
 def unknown(bot, update):
