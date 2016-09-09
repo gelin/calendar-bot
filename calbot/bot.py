@@ -28,12 +28,12 @@ from .ical import Calendar, sample_event
 
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
-/add ical_url @channel — to add new iCal to be sent to a channel
-/list — to see all configured calendars
-/del id — remove calendar by id
-/format [new format] — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
-/lang [language] — get or set language to print the event, may affect the week day name
-/advance [hours...] — get or set calendar events advance, i.e. how many hours before the event to publish it
+`/add ical_url @channel` — to add new iCal to be sent to a channel
+`/list` — to see all configured calendars
+`/del id` — remove calendar by id
+`/format [new format]` — get or set a calendar event formatting, use `{title}`, `{date}`, `{time}`, `{location}` and `{description}` variables
+`/lang [language]` — get or set language to print the event, may affect the week day name
+`/advance [hours...]` — get or set calendar events advance, i.e. how many hours before the event to publish it
 '''
 
 
@@ -119,7 +119,7 @@ def start(bot, update):
     :return: None
     """
     logger.info('started from %s', update.message.chat_id)
-    bot.sendMessage(chat_id=update.message.chat_id, text=GREETING)
+    bot.sendMessage(chat_id=update.message.chat_id, text=GREETING, parse_mode='Markdown')
 
 
 def add_calendar(bot, update, args, job_queue, config):
@@ -137,7 +137,8 @@ def add_calendar(bot, update, args, job_queue, config):
     user_id = str(message.chat_id)
     if len(args) < 2:
         bot.sendMessage(chat_id=user_id,
-                        text="Please provide two arguments to /add command:\n/add ical_url @channel")
+                        text="Please provide two arguments to `/add` command:\n`/add ical_url @channel`",
+                        parse_mode='Markdown')
         return
 
     url = args[0]
@@ -146,7 +147,8 @@ def add_calendar(bot, update, args, job_queue, config):
     queue_calendar_update(job_queue, calendar)
 
     bot.sendMessage(chat_id=user_id,
-                    text="Calendar %s is queued for verification" % url)
+                    text="Calendar *%s* is queued for verification" % url,
+                    parse_mode='Markdown')
 
 
 def list_calendars(bot, update, config):
@@ -159,10 +161,10 @@ def list_calendars(bot, update, config):
     """
     message = update.message or update.edited_message
     user_id = str(message.chat_id)
-    text = 'ID\tNAME\tCHANNEL\n'        # TODO: HTML formatting?
+    text = '*ID*\t*NAME*\t*CHANNEL*\n'        # TODO: HTML formatting?
     for calendar in config.user_calendars(user_id):
-        text += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
-    bot.sendMessage(chat_id=user_id, text=text)
+        text += '*%s*\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
+    bot.sendMessage(chat_id=user_id, text=text, parse_mode='Markdown')
 
 
 def delete_calendar(bot, update, args, job_queue, config):
@@ -180,7 +182,8 @@ def delete_calendar(bot, update, args, job_queue, config):
     user_id = str(message.chat_id)
     if len(args) < 1:
         bot.sendMessage(chat_id=user_id,
-                        text="Please provide the calendar id to /del command:\n/del calendar_id")
+                        text="Please provide the calendar id to `/del` command:\n`/del calendar_id`",
+                        parse_mode='Markdown')
         return
 
     for calendar_id in args:
@@ -190,11 +193,13 @@ def delete_calendar(bot, update, args, job_queue, config):
                 if job.context.id == calendar_id:
                     job.schedule_removal()
             bot.sendMessage(chat_id=user_id,
-                            text="Calendar %s is deleted" % calendar_id)
+                            text="Calendar *%s* is deleted" % calendar_id,
+                            parse_mode='Markdown')
         except Exception as e:
             logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
             bot.sendMessage(chat_id=user_id,
-                            text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
+                            text='Failed to delete calendar *%s*:\n%s' % (calendar_id, e),
+                            parse_mode='Markdown')
 
 
 def get_set_format(bot, update, config):
@@ -226,11 +231,11 @@ def print_format(bot, user_id, config):
     """
     user_config = config.load_user(user_id)
     format = user_config.format
-    text = 'Current format:\n%s\nSample event:\n%s' % (     # TODO: HTML formatting?
+    text = '*Current format:*\n%s\n*Sample event:*\n%s' % (
         format,
         format_event(format, sample_event)
     )
-    bot.sendMessage(chat_id=user_id, text=text)
+    bot.sendMessage(chat_id=user_id, text=text, parse_mode='Markdown')
 
 
 def set_format(bot, user_id, format, config):
@@ -244,14 +249,15 @@ def set_format(bot, user_id, format, config):
     """
     try:
         config.set_format(user_id, format)
-        text = 'Format updated\nSample event:\n%s' % (     # TODO: HTML formatting?
+        text = 'Format updated\n*Sample event:*\n%s' % (
             format_event(format, sample_event)
         )
-        bot.sendMessage(chat_id=user_id, text=text)
+        bot.sendMessage(chat_id=user_id, text=text, parse_mode='Markdown')
     except Exception as e:
         logger.warning('Failed to update format for user %s', config.user_id, exc_info=True)
         bot.sendMessage(chat_id=config.user_id,
-                        text='Failed to update format:\n%s' % e)
+                        text='Failed to update format:\n%s' % e,
+                        parse_mode='Markdown')
 
 
 def unknown(bot, update):
@@ -261,7 +267,9 @@ def unknown(bot, update):
     :param update: Update instance
     :return: None
     """
-    bot.sendMessage(chat_id=update.message.chat_id, text="Sorry, I don't understand that command.")
+    bot.sendMessage(chat_id=update.message.chat_id,
+                    text="Sorry, I don't understand that command.",
+                    parse_mode='Markdown')
 
 
 def error(bot, update, error):
@@ -293,15 +301,18 @@ def update_calendar(bot, job):
         config.save_events()
         if not config.verified:
             bot.sendMessage(chat_id=config.channel_id,
-                            text='Events from %s will be notified here' % calendar.name)
+                            text='Events from *%s* will be notified here' % calendar.name,
+                            parse_mode='Markdown')
             config.save_calendar(calendar)
             bot.sendMessage(chat_id=config.user_id,
-                            text='Added:\n%s\t%s\t%s' % (config.id, config.name, config.channel_id))
+                            text='Added:\n*%s*\t%s\t%s' % (config.id, config.name, config.channel_id),
+                            parse_mode='Markdown')
     except Exception as e:
         logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
         if not config.verified:
             bot.sendMessage(chat_id=config.user_id,
-                            text='Failed to process calendar %s:\n%s' % (config.id, e))
+                            text='Failed to process calendar *%s*:\n%s' % (config.id, e),
+                            parse_mode='Markdown')
 
 
 def send_event(bot, channel_id, event, format):
@@ -313,7 +324,7 @@ def send_event(bot, channel_id, event, format):
     :param format: format string
     :return: None
     """
-    bot.sendMessage(chat_id=channel_id, text=format_event(format, event))
+    bot.sendMessage(chat_id=channel_id, text=format_event(format, event))   #, parse_mode='Markdown') # TODO fix Markdown
 
 
 def format_event(format, event):
