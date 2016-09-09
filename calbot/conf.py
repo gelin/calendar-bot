@@ -222,6 +222,20 @@ class Config:
 
         config_file.write(config_parser)
 
+    def set_format(self, user_id, format):
+        """
+        Sets the event format for the user, writes it to settings.cfg of the user.
+        :param user_id: ID of the user
+        :param format: new format
+        :return: None
+        """
+        config_file = UserConfigFile(self.vardir, user_id)
+        parser = config_file.read_parser()
+        if not parser.has_section('settings'):
+            parser.add_section('settings')
+        parser.set('settings', 'format', format)
+        config_file.write(parser)
+
 
 class UserConfig:
     """

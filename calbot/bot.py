@@ -242,7 +242,16 @@ def set_format(bot, user_id, format, config):
     :param config: Config instance
     :return: None
     """
-    # TODO
+    try:
+        config.set_format(user_id, format)
+        text = 'Format updated\nSample event:\n%s' % (     # TODO: HTML formatting?
+            format_event(format, sample_event)
+        )
+        bot.sendMessage(chat_id=user_id, text=text)
+    except Exception as e:
+        logger.warning('Failed to update format for user %s', config.user_id, exc_info=True)
+        bot.sendMessage(chat_id=config.user_id,
+                        text='Failed to update format:\n%s' % e)
 
 
 def unknown(bot, update):
