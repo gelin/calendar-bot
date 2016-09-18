@@ -159,7 +159,7 @@ def list_calendars(bot, update, config):
     """
     message = update.message or update.edited_message
     user_id = str(message.chat_id)
-    text = 'ID\tNAME\tCHANNEL\n'        # TODO: HTML formatting?
+    text = 'ID\tNAME\tCHANNEL\n'
     for calendar in config.user_calendars(user_id):
         text += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
     bot.sendMessage(chat_id=user_id, text=text)
@@ -226,7 +226,7 @@ def print_format(bot, user_id, config):
     """
     user_config = config.load_user(user_id)
     format = user_config.format
-    text = 'Current format:\n%s\nSample event:\n%s' % (     # TODO: HTML formatting?
+    text = 'Current format:\n%s\nSample event:\n%s' % (
         format,
         format_event(format, sample_event)
     )
@@ -244,7 +244,7 @@ def set_format(bot, user_id, format, config):
     """
     try:
         config.set_format(user_id, format)
-        text = 'Format updated\nSample event:\n%s' % (     # TODO: HTML formatting?
+        text = 'Format updated\nSample event:\n%s' % (
             format_event(format, sample_event)
         )
         bot.sendMessage(chat_id=user_id, text=text)
