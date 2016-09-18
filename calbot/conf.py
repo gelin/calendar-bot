@@ -222,20 +222,6 @@ class Config:
 
         config_file.write(config_parser)
 
-    def set_format(self, user_id, format):
-        """
-        Sets the event format for the user, writes it to settings.cfg of the user.
-        :param user_id: ID of the user
-        :param format: new format
-        :return: None
-        """
-        config_file = UserConfigFile(self.vardir, user_id)
-        parser = config_file.read_parser()
-        if not parser.has_section('settings'):
-            parser.add_section('settings')
-        parser.set('settings', 'format', format)
-        config_file.write(parser)
-
 
 class UserConfig:
     """
@@ -255,6 +241,8 @@ class UserConfig:
         """Language to format the event"""
         self.advance = kwargs['advance']
         """Array of hours for advance the calendar event"""
+        self.config_parser = kwargs.get('config_parser', None)
+        """ConfigParser from which this object was loaded, None if this is new a config"""
 
     @classmethod
     def new(cls, config, user_id):
@@ -291,8 +279,35 @@ class UserConfig:
             advance=list(
                 map(int,
                     config_parser.get('settings', 'advance', fallback=' '.join(map(str, DEFAULT_ADVANCE))).split())
-            )
+            ),
+            config_parser=config_parser
         )
+
+    def set_format(self, format):
+        """
+        Sets the event format for the user, writes it to settings.cfg of the user.
+        :param format: new format
+        :return: None
+        """
+        config_file = UserConfigFile(self.vardir, self.id)
+        parser = self.config_parser or config_file.read_parser()
+        if not parser.has_section('settings'):
+            parser.add_section('settings')
+        parser.set('settings', 'format', format)
+        config_file.write(parser)
+
+    def set_language(self, language):
+        """
+        Sets the event format for the user, writes it to settings.cfg of the user.
+        :param language: new language
+        :return: None
+        """
+        config_file = UserConfigFile(self.vardir, self.id)
+        parser = self.config_parser or config_file.read_parser()
+        if not parser.has_section('settings'):
+            parser.add_section('settings')
+        parser.set('settings', 'language', language)
+        config_file.write(parser)
 
 
 class CalendarConfig:
