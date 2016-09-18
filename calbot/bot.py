@@ -76,6 +76,11 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('format', get_set_format_with_config,
                                           allow_edited=True))
 
+    def get_set_lang_with_config(bot, update, args):
+        get_set_lang(bot, update, args, config)
+    dispatcher.add_handler(CommandHandler('lang', get_set_lang_with_config,
+                                          allow_edited=True, pass_args=True))
+
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
     dispatcher.add_error_handler(error)
@@ -206,52 +211,75 @@ def get_set_format(bot, update, config):
     :param config: Config instance
     :return: None
     """
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    parts = message.text.split(' ', maxsplit=1)
-    if len(parts) < 2:
-        print_format(bot, user_id, config)
-    else:
-        new_format = parts[1]
-        set_format(bot, user_id, new_format, config)
 
-
-def print_format(bot, user_id, config):
-    """
-    Prints the current format
-    :param bot: Bot instance
-    :param user_id: ID of the user
-    :param config: Config instance
-    :return: None
-    """
-    user_config = config.load_user(user_id)
-    format = user_config.format
-    text = 'Current format:\n%s\nSample event:\n%s' % (
-        format,
-        format_event(format, sample_event)
-    )
-    bot.sendMessage(chat_id=user_id, text=text)
-
-
-def set_format(bot, user_id, format, config):
-    """
-    Saves the new format for the user
-    :param bot: Bot instance
-    :param user_id: ID of the user
-    :param format: new format
-    :param config: Config instance
-    :return: None
-    """
-    try:
-        config.set_format(user_id, format)
-        text = 'Format updated\nSample event:\n%s' % (
-            format_event(format, sample_event)
+    def print_format():
+        text = 'Current format:\n%s\nSample event:\n%s' % (
+            user_config.format,
+            format_event(user_config, sample_event)
         )
         bot.sendMessage(chat_id=user_id, text=text)
-    except Exception as e:
-        logger.warning('Failed to update format for user %s', config.user_id, exc_info=True)
-        bot.sendMessage(chat_id=config.user_id,
-                        text='Failed to update format:\n%s' % e)
+
+    def set_format(format):
+        try:
+            user_config.set_format(format)
+            text = 'Format updated\nSample event:\n%s' % (
+                format_event(user_config, sample_event)
+            )
+            bot.sendMessage(chat_id=user_id, text=text)
+        except Exception as e:
+            logger.warning('Failed to update format for user %s', user_id, exc_info=True)
+            bot.sendMessage(chat_id=user_id,
+                            text='Failed to update format:\n%s' % e)
+
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    user_config = config.load_user(user_id)
+    parts = message.text.split(' ', maxsplit=1)
+    if len(parts) < 2:
+        print_format()
+    else:
+        new_format = parts[1]
+        set_format(new_format)
+
+
+def get_set_lang(bot, update, args, config):
+    """
+    /lang command handler.
+    Prints the current language or sets the new language to display the calendar event.
+    :param bot: Bot instance
+    :param update: Update instance
+    :param args: Command arguments
+    :param config: Config instance
+    :return: None
+    """
+
+    def print_lang():
+        text = 'Current language: %s\nSample event:\n%s' % (
+            user_config.language,
+            format_event(user_config, sample_event)
+        )
+        bot.sendMessage(chat_id=user_id, text=text)
+
+    def set_lang(language):
+        try:
+            user_config.set_language(language)
+            text = 'Language updated\nSample event:\n%s' % (
+                format_event(user_config, sample_event)
+            )
+            bot.sendMessage(chat_id=user_id, text=text)
+        except Exception as e:
+            logger.warning('Failed to update language to "%s" for user %s', language, user_id, exc_info=True)
+            bot.sendMessage(chat_id=user_id,
+                            text='Failed to update language:\n%s' % e)
+
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    user_config = config.load_user(user_id)
+    if len(args) < 1:
+        print_lang()
+    else:
+        new_lang = args[0]
+        set_lang(new_lang)
 
 
 def unknown(bot, update):
@@ -316,11 +344,11 @@ def send_event(bot, channel_id, event, format):
     bot.sendMessage(chat_id=channel_id, text=format_event(format, event))
 
 
-def format_event(format, event):
+def format_event(user_config, event):
     """
     Formats the event for notification
-    :param format: format string
+    :param user_config: UserConfig instance, contains format string and language
     :param event: Event instance
     :return: formatted string
     """
-    return format.format(**event.to_dict())
+    return user_config.format.format(**event.to_dict())

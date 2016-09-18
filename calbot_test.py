@@ -22,11 +22,12 @@ import datetime
 import os
 
 import pytz
+import shutil
 
 from icalendar.cal import Component
 
 from calbot.bot import format_event
-from calbot.conf import CalendarConfig, Config, UserConfig, DEFAULT_FORMAT
+from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 
 
@@ -42,8 +43,9 @@ def test_format_event():
     component = _get_component()
     component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
     event = Event(component, pytz.UTC)
-    result = format_event(DEFAULT_FORMAT, event)
-    assert 'summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription\n' == result, result
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    result = format_event(user_config, event)
+    assert 'summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription' == result, result
 
 
 def test_read_calendar():
@@ -131,3 +133,21 @@ def test_default_calendar_config():
             'TEST'),
         '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
     assert calendar_config.advance == [24, 48]
+
+
+def test_set_format():
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    user_config.set_format("TEST FORMAT")
+    config_file = UserConfigFile('var', 'TEST')
+    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+    assert user_config.format == "TEST FORMAT", user_config.format
+    shutil.rmtree('var/TEST')
+
+
+def test_set_language():
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    user_config.set_language("TEST_LANGUAGE")
+    config_file = UserConfigFile('var', 'TEST')
+    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+    assert user_config.language == "TEST_LANGUAGE", user_config.language
+    shutil.rmtree('var/TEST')
