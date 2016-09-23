@@ -126,6 +126,14 @@ class Config:
         """the bot token"""
         self.interval = config.getint('bot', 'interval', fallback=3600)
         """the interval to reread calendars, in seconds"""
+        self.bootstrap_retries = config.getint('bot', 'bootstrap_retries', fallback=0)
+        """Whether the bootstrapping phase of the Updater will retry on failures on the Telegram server."""
+        self.poll_interval = config.getfloat('polling', 'poll_interval', fallback=0.0)
+        """Time to wait between polling updates from Telegram"""
+        self.timeout = config.getfloat('polling', 'timeout', fallback=10.0)
+        """Timeout in seconds for long polling"""
+        self.network_delay = config.getfloat('polling', 'timeout', fallback=5.0)
+        """Additional timeout in seconds to allow the response from Telegram servers."""
         self.webhook = config.getboolean('webhook', 'webhook', fallback=False)
         """use webhook or not"""
         self.domain = config.get('webhook', 'domain', fallback=None)

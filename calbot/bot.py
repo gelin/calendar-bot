@@ -86,13 +86,21 @@ def run_bot(config):
 
     if config.webhook:
         webhook_url = 'https://%s/%s' % (config.domain, config.token)
-        updater.start_webhook(listen=config.listen, port=config.port,
-                              url_path=config.token, webhook_url=webhook_url)
+        updater.start_webhook(listen=config.listen,
+                              port=config.port,
+                              url_path=config.token,
+                              webhook_url=webhook_url,
+                              bootstrap_retries=config.bootstrap_retries)
         logger.info('started webhook on %s:%s' % (config.listen, config.port))
         updater.bot.set_webhook(webhook_url)
         logger.info('set webhook to %s' % webhook_url)
     else:
-        updater.start_polling(clean=True)
+        updater.start_polling(clean=True,
+                              poll_interval=config.poll_interval,
+                              timeout=config.timeout,
+                              network_delay=config.network_delay,
+                              bootstrap_retries=config.bootstrap_retries,
+                              )
         logger.info('started polling')
 
     start_delay = 0
