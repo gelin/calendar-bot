@@ -151,3 +151,13 @@ def test_set_language():
     user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
     assert user_config.language == "TEST_LANGUAGE", user_config.language
     shutil.rmtree('var/TEST')
+
+
+def test_format_event_ru():
+    component = _get_component()
+    component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
+    event = Event(component, pytz.UTC)
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    user_config.language = 'ru_RU.UTF-8'
+    result = format_event(user_config, event)
+    assert 'summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription' == result, result
