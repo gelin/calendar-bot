@@ -16,8 +16,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
-
-
+import locale
 import logging
 from telegram.ext import Updater
 from telegram.ext import CommandHandler
@@ -261,12 +260,21 @@ def get_set_lang(bot, update, args, config):
         bot.sendMessage(chat_id=user_id, text=text)
 
     def set_lang(language):
+        old_language = user_config.language
         try:
-            user_config.set_language(language)
-            text = 'Language updated\nSample event:\n%s' % (
-                format_event(user_config, sample_event)
-            )
-            bot.sendMessage(chat_id=user_id, text=text)
+            normalized_locale = locale.normalize(language)
+            user_config.set_language(normalized_locale)
+            try:
+                text = 'Language updated to %s\nSample event:\n%s' % (
+                    normalized_locale,
+                    format_event(user_config, sample_event)
+                )
+                bot.sendMessage(chat_id=user_id, text=text)
+            except locale.Error as e:
+                user_config.set_language(old_language)
+                logger.warning('Unsupported language "%s" for user %s', language, user_id, exc_info=True)
+                bot.sendMessage(chat_id=user_id,
+                                text='Unsupported language:\n%s' % e)
         except Exception as e:
             logger.warning('Failed to update language to "%s" for user %s', language, user_id, exc_info=True)
             bot.sendMessage(chat_id=user_id,
@@ -351,4 +359,7 @@ def format_event(user_config, event):
     :param event: Event instance
     :return: formatted string
     """
-    return user_config.format.format(**event.to_dict())
+    locale.setlocale(locale.LC_ALL, user_config.language)       # assuming formatting will never be concurrently
+    result = user_config.format.format(**event.to_dict())
+    locale.resetlocale()
+    return result
