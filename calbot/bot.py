@@ -249,6 +249,12 @@ def get_set_format(bot, update, config):
         set_format(new_format)
 
 
+def normalize_locale(language):             # TODO: move it to a formatting module
+    normalized_locale = locale.normalize(language)
+    utf8_locale = normalized_locale.rpartition('.')[0] + '.UTF-8'
+    return utf8_locale
+
+
 def get_set_lang(bot, update, args, config):
     """
     /lang command handler.
@@ -270,7 +276,7 @@ def get_set_lang(bot, update, args, config):
     def set_lang(language):
         old_language = user_config.language
         try:
-            normalized_locale = locale.normalize(language)
+            normalized_locale = normalize_locale(language)
             user_config.set_language(normalized_locale)
             try:
                 text = 'Language updated to %s\nSample event:\n%s' % (

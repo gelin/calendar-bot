@@ -26,7 +26,7 @@ import shutil
 
 from icalendar.cal import Component
 
-from calbot.bot import format_event
+from calbot.bot import format_event, normalize_locale
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 
@@ -161,3 +161,7 @@ def test_format_event_ru():
     user_config.language = 'ru_RU.UTF-8'
     result = format_event(user_config, event)
     assert 'summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription' == result, result
+
+def test_normalize_locale():
+    result = normalize_locale('it')
+    assert 'it_IT.UTF-8' == result, result
