@@ -1,9 +1,8 @@
 ---
-bot:
-  user: bot
-  basedir: /opt/bot
-  service_name: bot
-  service_description: 'Telegram bot'
-  token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-  webhook_listen: '127.0.0.1'
-  webhook_port: 5000
+bot_user: bot
+bot_basedir: /opt/bot
+bot_service_name: bot
+bot_service_description: 'Telegram bot'
+bot_token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+bot_webhook_listen: '127.0.0.1'
+bot_webhook_port: 5000
