@@ -1,0 +1,18 @@
+---
+# https://en.wikipedia.org/wiki/List_of_languages_by_total_number_of_speakers
+# https://docs.moodle.org/dev/Table_of_locales
+locales_install:
+  - zh_CN.UTF-8
+  - zh_TW.UTF-8
+  - en_US.UTF-8
+  - es_ES.UTF-8
+  - ar_SA.UTF-8
+  - ru_RU.UTF-8
+  - pt_PT.UTF-8
+  - ms_MY.UTF-8
+  - fr_FR.UTF-8
+  - de_DE.UTF-8
+  - ja_JP.UTF-8
+  - it_IT.UTF-8
+  - ko_KR.UTF-8
+  - tr_TR.UTF-8

@@ -1,0 +1,4 @@
+---
+- name: generate locales
+  locale_gen: name={{ item }} state=present
+  with_items: '{{ locales_install }}'
