@@ -1,6 +1,5 @@
 ---
-bot:
-  domain: bot.telegram.example.com
-  token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
-  webhook_port: 5000
-  site_config: bot
+bot_domain: bot.telegram.example.com
+bot_token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
+bot_webhook_port: 5000
+bot_site_config: bot

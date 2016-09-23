@@ -1,20 +1,20 @@
 ---
 - name: create bot user
   user:
-    name: '{{ bot.user }}'
+    name: '{{ bot_user }}'
     system: yes
 
 - name: create bot dir
   file:
-    path: '{{ bot.basedir }}'
+    path: '{{ bot_basedir }}'
     state: directory
-    owner: '{{ bot.user }}'
+    owner: '{{ bot_user }}'
 
 - name: copy bot files
   copy:
     src: '../{{ item }}'
-    dest: '{{ bot.basedir }}/{{ item }}'
-    owner: '{{ bot.user }}'
+    dest: '{{ bot_basedir }}/{{ item }}'
+    owner: '{{ bot_user }}'
   notify: restart bot
   with_items:
     - 'calbot.py'
@@ -25,17 +25,17 @@
 - name: install dependencies
   pip:
     executable: /usr/bin/pip3
-    requirements: '{{ bot.basedir }}/requirements.txt'
+    requirements: '{{ bot_basedir }}/requirements.txt'
   notify: restart bot
 
 - name: create config
   template:
     src: bot.cfg
-    dest: '{{ bot.basedir }}/{{ bot.service_name }}.cfg'
+    dest: '{{ bot_basedir }}/{{ bot_service_name }}.cfg'
   notify: restart bot
 
 - name: install systemd service
   template:
     src: bot.service
-    dest: '/etc/systemd/system/{{ bot.service_name }}.service'
+    dest: '/etc/systemd/system/{{ bot_service_name }}.service'
   notify: update systemd
