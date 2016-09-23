@@ -7,6 +7,9 @@ bot_user: bot
 bot_basedir: /opt/bot
 bot_service_name: bot
 bot_service_description: 'Telegram bot'
+
+bot_bootstrap_retries: -1
+
 letsencrypt_cert_domains:
   - "{{ bot.domain }}"
 letsencrypt_email: "webmaster@example.com"

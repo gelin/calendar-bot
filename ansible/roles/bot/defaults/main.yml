@@ -6,3 +6,4 @@ bot_service_description: 'Telegram bot'
 bot_token: '225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY'
 bot_webhook_listen: '127.0.0.1'
 bot_webhook_port: 5000
+bot_bootstrap_retries: -1
