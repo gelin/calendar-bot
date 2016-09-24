@@ -80,6 +80,11 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('lang', get_set_lang_with_config,
                                           allow_edited=True, pass_args=True))
 
+    def get_set_advance_with_config(bot, update, args):
+        get_set_advance(bot, update, args, config)
+    dispatcher.add_handler(CommandHandler('advance', get_set_advance_with_config,
+                                          allow_edited=True, pass_args=True))
+
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
     dispatcher.add_error_handler(error)
@@ -229,7 +234,7 @@ def get_set_format(bot, update, config):
     def set_format(format):
         try:
             user_config.set_format(format)
-            text = 'Format updated\nSample event:\n%s' % (
+            text = 'Format is updated\nSample event:\n%s' % (
                 format_event(user_config, sample_event)
             )
             bot.sendMessage(chat_id=user_id, text=text)
@@ -279,7 +284,7 @@ def get_set_lang(bot, update, args, config):
             normalized_locale = normalize_locale(language)
             user_config.set_language(normalized_locale)
             try:
-                text = 'Language updated to %s\nSample event:\n%s' % (
+                text = 'Language is updated to %s\nSample event:\n%s' % (
                     normalized_locale,
                     format_event(user_config, sample_event)
                 )
@@ -302,6 +307,45 @@ def get_set_lang(bot, update, args, config):
     else:
         new_lang = args[0]
         set_lang(new_lang)
+
+
+def get_set_advance(bot, update, args, config):
+    """
+    /advance command handler.
+    Prints the current advance hours or sets the new advance hours,
+    to display the event before it starts with these hours in advance.
+    :param bot: Bot instance
+    :param update: Update instance
+    :param args: Command arguments
+    :param config: Config instance
+    :return: None
+    """
+
+    def print_advance():
+        text = 'Events are notified %s hours in advance' % (
+            ', '.join(user_config.advance),
+        )
+        bot.sendMessage(chat_id=user_id, text=text)
+
+    def set_advance(hours):
+        try:
+            user_config.set_advance(hours)
+            text = 'Advance hours are updated.\nEvents will be notified %s hours in advance.' % (
+                ', '.join(user_config.advance),
+            )
+            bot.sendMessage(chat_id=user_id, text=text)
+        except Exception as e:
+            logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
+            bot.sendMessage(chat_id=user_id,
+                            text='Failed to update advance hours:\n%s' % e)
+
+    message = update.message or update.edited_message
+    user_id = str(message.chat_id)
+    user_config = config.load_user(user_id)
+    if len(args) < 1:
+        print_advance()
+    else:
+        set_advance(args)
 
 
 def unknown(bot, update):

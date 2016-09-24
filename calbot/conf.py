@@ -318,6 +318,21 @@ class UserConfig:
         config_file.write(parser)
         self.language = language
 
+    def set_advance(self, hours):
+        """
+        Sets the list of hours to notify events in advance.
+        :param hours: advance hours
+        :return: None
+        """
+        config_file = UserConfigFile(self.vardir, self.id)
+        parser = self.config_parser or config_file.read_parser()
+        if not parser.has_section('settings'):
+            parser.add_section('settings')
+        int_hours = sorted(set(map(int, hours)), reverse=True)
+        parser.set('settings', 'advance', ' '.join(map(str, int_hours)))
+        config_file.write(parser)
+        self.advance = int_hours
+
 
 class CalendarConfig:
     """

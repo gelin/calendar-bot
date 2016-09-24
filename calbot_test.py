@@ -163,6 +163,17 @@ def test_format_event_ru():
     result = format_event(user_config, event)
     assert 'summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription' == result, result
 
+
 def test_normalize_locale():
     result = normalize_locale('it')
     assert 'it_IT.UTF-8' == result, result
+
+
+def test_set_advance():
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    user_config.set_advance(['1', '3', '2', '3'])
+    assert user_config.advance == [3, 2, 1], user_config.advance
+    config_file = UserConfigFile('var', 'TEST')
+    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+    assert user_config.advance == [3, 2, 1], user_config.advance
+    shutil.rmtree('var/TEST')
