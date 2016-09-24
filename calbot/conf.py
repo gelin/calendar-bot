@@ -357,6 +357,8 @@ class CalendarConfig:
         """Flag indicating should the calendar fetching errors be sent to user"""
         self.format = kwargs['format']
         """Format string for the event"""
+        self.language = kwargs['language']
+        """Language for the event"""
         self.advance = kwargs['advance']
         """Array of the numbers: how many hours in advance notify about the event"""
         self.day_start = time(10, 0)
@@ -379,6 +381,7 @@ class CalendarConfig:
             interval=user_config.interval,
             user_id=user_config.id,
             format=user_config.format,
+            language=user_config.language,
             advance=user_config.advance,
             cal_id=cal_id,
             url=url,
@@ -403,6 +406,7 @@ class CalendarConfig:
             interval=user_config.interval,
             user_id=user_config.id,
             format=user_config.format,
+            language=user_config.language,
             advance=user_config.advance,
             cal_id=cal_id,
             url=config_parser.get(section, 'url'),
