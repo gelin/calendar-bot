@@ -379,7 +379,7 @@ def update_calendar(bot, job):
     try:
         calendar = Calendar(config)
         for event in calendar.events:
-            send_event(bot, config.channel_id, event, config.format)
+            send_event(bot, config, event)
             config.event_notified(event)
         config.save_events()
         if not config.verified:
@@ -395,13 +395,12 @@ def update_calendar(bot, job):
                             text='Failed to process calendar %s:\n%s' % (config.id, e))
 
 
-def send_event(bot, channel_id, event, format):
+def send_event(bot, config, event):
     """
     Sends the event notification to the channel
     :param bot: Bot instance
-    :param channel_id: channel_id where to notify
+    :param config: CalendarConfig instance
     :param event: Event instance, read from ical
-    :param format: format string
     :return: None
     """
-    bot.sendMessage(chat_id=channel_id, text=format_event(format, event))
+    bot.sendMessage(chat_id=config.channel_id, text=format_event(config, event))
