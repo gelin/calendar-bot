@@ -52,7 +52,9 @@ class Calendar:
         self.all_events = list(self.read_ical(self.url))
         """list of all calendar events, from ical file"""
         future_events = filter_future_events(self.all_events, max(self.advance))
-        self.events = list(filter_notified_events(future_events, config))   # TODO sort by date
+        unnotified_events = filter_notified_events(future_events, config)
+        sorted_events = sort_events(unnotified_events)
+        self.events = list(sorted_events)
         """list of calendar events which should be notified, filtered from ical file"""
 
     def read_ical(self, url):
@@ -140,6 +142,12 @@ def filter_notified_events(events, config):
                 event.notified_for_advance = advance
                 yield event
                 break
+
+
+def sort_events(events):
+    def sort_key(event):
+        return event.date
+    return sorted(events, key=sort_key)
 
 
 def _get_sample_event():

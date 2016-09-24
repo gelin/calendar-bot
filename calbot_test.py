@@ -28,7 +28,7 @@ from icalendar.cal import Component
 
 from calbot.formatting import normalize_locale, format_event
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT
-from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
+from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events, sort_events
 
 
 def _get_component():
@@ -177,3 +177,18 @@ def test_set_advance():
     user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
     assert user_config.advance == [3, 2, 1], user_config.advance
     shutil.rmtree('var/TEST')
+
+
+def test_sort_events():
+    timezone = pytz.UTC
+    component_past = _get_component()
+    component_past.add('dtstart', datetime.datetime.now(tz=timezone) - datetime.timedelta(hours=1))
+    component_now = _get_component()
+    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
+    component_future = _get_component()
+    component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
+    events = [Event(component_future, timezone), Event(component_now, timezone), Event(component_past, timezone)]
+    result = list(sort_events(events))
+    assert events[2] == result[0], result
+    assert events[1] == result[1], result
+    assert events[0] == result[2], result
