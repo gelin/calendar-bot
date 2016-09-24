@@ -287,7 +287,8 @@ def get_set_lang(bot, update, args, config):
                 )
                 bot.sendMessage(chat_id=user_id, text=text)
             except locale.Error as e:
-                user_config.set_language(old_language)
+                if old_language:
+                    user_config.set_language(old_language)
                 logger.warning('Unsupported language "%s" for user %s', language, user_id, exc_info=True)
                 bot.sendMessage(chat_id=user_id,
                                 text='Unsupported language:\n%s' % e)
