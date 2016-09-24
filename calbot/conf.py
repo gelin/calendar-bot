@@ -316,6 +316,7 @@ class UserConfig:
             parser.add_section('settings')
         parser.set('settings', 'language', language)
         config_file.write(parser)
+        self.language = language
 
 
 class CalendarConfig:
