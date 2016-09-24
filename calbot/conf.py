@@ -104,7 +104,7 @@ DEFAULT_FORMAT = '''{title}
 {location}
 {description}'''
 
-DEFAULT_ADVANCE = [24, 48]
+DEFAULT_ADVANCE = [48, 24]
 
 
 class Config:
