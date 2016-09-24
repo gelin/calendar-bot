@@ -147,6 +147,7 @@ def test_set_format():
 def test_set_language():
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     user_config.set_language("TEST_LANGUAGE")
+    assert user_config.language == "TEST_LANGUAGE", user_config.language
     config_file = UserConfigFile('var', 'TEST')
     user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
     assert user_config.language == "TEST_LANGUAGE", user_config.language
