@@ -321,7 +321,7 @@ def get_set_advance(bot, update, args, config):
 
     def print_advance():
         text = 'Events are notified %s hours in advance' % (
-            ', '.join(user_config.advance),
+            ', '.join(map(str, user_config.advance)),
         )
         bot.sendMessage(chat_id=user_id, text=text)
 
@@ -329,7 +329,7 @@ def get_set_advance(bot, update, args, config):
         try:
             user_config.set_advance(hours)
             text = 'Advance hours are updated.\nEvents will be notified %s hours in advance.' % (
-                ', '.join(user_config.advance),
+                ', '.join(map(str, user_config.advance)),
             )
             bot.sendMessage(chat_id=user_id, text=text)
         except Exception as e:
