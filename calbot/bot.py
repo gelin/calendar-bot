@@ -30,6 +30,7 @@ from telegram.ext import Updater
 from calbot.formatting import normalize_locale, format_event
 from calbot.ical import Calendar, sample_event
 
+
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — to add new iCal to be sent to a channel
 /list — to see all configured calendars
@@ -39,9 +40,7 @@ GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /advance [hours...] — get or set calendar events advance, i.e. how many hours before the event to publish it
 '''
 
-
 __all__ = ['run_bot']
-
 
 logger = logging.getLogger('bot')
 

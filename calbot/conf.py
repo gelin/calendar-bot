@@ -97,12 +97,10 @@ from datetime import time
 
 __all__ = ['Config']
 
-
 logger = logging.getLogger('conf')
 
-
 DEFAULT_FORMAT = '''{title}
-{date:%A, %d %B %Y, %H:%M %Z}
+{date:%A, %d %B %Y}{time:, %H:%M %Z}
 {location}
 {description}'''
 
