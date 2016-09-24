@@ -26,7 +26,7 @@ import shutil
 
 from icalendar.cal import Component
 
-from calbot.bot import format_event, normalize_locale
+from calbot.formatting import normalize_locale, format_event
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events
 

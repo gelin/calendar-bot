@@ -16,15 +16,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
+
+
 import locale
 import logging
-from telegram.ext import Updater
+
 from telegram.ext import CommandHandler
-from telegram.ext import MessageHandler
 from telegram.ext import Filters
 from telegram.ext import Job
-from .ical import Calendar, sample_event
+from telegram.ext import MessageHandler
+from telegram.ext import Updater
 
+from calbot.formatting import normalize_locale, format_event
+from calbot.ical import Calendar, sample_event
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — to add new iCal to be sent to a channel
@@ -254,12 +258,6 @@ def get_set_format(bot, update, config):
         set_format(new_format)
 
 
-def normalize_locale(language):             # TODO: move it to a formatting module
-    normalized_locale = locale.normalize(language)
-    utf8_locale = normalized_locale.rpartition('.')[0] + '.UTF-8'
-    return utf8_locale
-
-
 def get_set_lang(bot, update, args, config):
     """
     /lang command handler.
@@ -408,16 +406,3 @@ def send_event(bot, channel_id, event, format):
     :return: None
     """
     bot.sendMessage(chat_id=channel_id, text=format_event(format, event))
-
-
-def format_event(user_config, event):
-    """
-    Formats the event for notification
-    :param user_config: UserConfig instance, contains format string and language
-    :param event: Event instance
-    :return: formatted string
-    """
-    locale.setlocale(locale.LC_ALL, user_config.language)       # assuming formatting will never be concurrently
-    result = user_config.format.format(**event.to_dict())
-    locale.resetlocale()
-    return result
