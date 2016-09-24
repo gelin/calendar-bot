@@ -4,10 +4,10 @@ vardir = var
 interval = 3600
 bootstrap_retries = -1
 
-[polling]
-poll_interval = 15
-timeout = 0
-network_delay = 15
+#[polling]
+#poll_interval = 15
+#timeout = 0
+#network_delay = 15
 
 [webhook]
 webhook = yes
