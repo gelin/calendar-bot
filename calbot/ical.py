@@ -94,7 +94,7 @@ class Event:
         """calendar event datetime, relative to which to calculate notification moment,
         uses day_start if time for current event is None"""
 
-        # TODO: check events with different timezone
+        # DTSTART is always in UTC, not possible to get event-specific timezone
         dtstart = vevent.get('DTSTART').dt
         if isinstance(dtstart, datetime):
             dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
