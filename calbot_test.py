@@ -141,6 +141,7 @@ def test_default_calendar_config():
 def test_set_format():
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     user_config.set_format("TEST FORMAT")
+    assert user_config.format == "TEST FORMAT", user_config.format
     config_file = UserConfigFile('var', 'TEST')
     user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
     assert user_config.format == "TEST FORMAT", user_config.format

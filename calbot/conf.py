@@ -302,6 +302,7 @@ class UserConfig:
             parser.add_section('settings')
         parser.set('settings', 'format', format)
         config_file.write(parser)
+        self.format = format
 
     def set_language(self, language):
         """
