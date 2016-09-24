@@ -19,11 +19,12 @@
 
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, date, timedelta
 from urllib.request import urlopen
 import pytz
 import icalendar
 
+from calbot.formatting import BlankFormat
 
 __all__ = ['Calendar', 'sample_event']
 
@@ -86,13 +87,24 @@ class Event:
         self.title = str(vevent.get('SUMMARY'))
         """title of the event"""
         self.date = None
-        """calendar event datetime"""
+        """calendar event date"""
+        self.time = None
+        """calendar event time, can be None"""
+        self.notify_datetime = None
+        """calendar event datetime, relative to which to calculate notification moment,
+        uses day_start if time for current event is None"""
+
         # TODO: check events with different timezone
-        # TODO: separate date and time to different fields, time can be None
-        try:
-            self.date = vevent.get('DTSTART').dt.astimezone(timezone)
-        except:
-            self.date = datetime.combine(vevent.get('DTSTART').dt, day_start.replace(tzinfo=timezone))
+        dtstart = vevent.get('DTSTART').dt
+        if isinstance(dtstart, datetime):
+            dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
+            self.date = dtstarttz.date()
+            self.time = dtstarttz.timetz()
+            self.notify_datetime = datetime.combine(self.date, self.time)
+        elif isinstance(dtstart, date):
+            self.date = dtstart
+            self.notify_datetime = datetime.combine(self.date, day_start.replace(tzinfo=timezone))
+
         self.location = str(vevent.get('LOCATION'))
         """the event location as string"""
         self.description = str(vevent.get('DESCRIPTION'))
@@ -105,7 +117,11 @@ class Event:
         Converts the event to dict to be easy passed to format function.
         :return: dict of the event properties
         """
-        return dict(title=self.title, date=self.date, location=self.location, description=self.description)
+        return dict(title=self.title or BlankFormat(),
+                    date=self.date or BlankFormat(),
+                    time=self.time or BlankFormat(),
+                    location=self.location or BlankFormat(),
+                    description=self.description or BlankFormat())
 
 
 def filter_future_events(events, max_advance):
@@ -118,7 +134,7 @@ def filter_future_events(events, max_advance):
     now = datetime.now(tz=pytz.UTC)
     end = now + timedelta(hours=max_advance)
     for event in events:
-        if now < event.date <= end:
+        if now < event.notify_datetime <= end:
             yield event
 
 
@@ -138,7 +154,7 @@ def filter_notified_events(events, config):
             last_notified = notified is not None and notified.last_notified
             if last_notified is not None and last_notified <= advance:
                 continue
-            if event.date <= now + timedelta(hours=advance):
+            if event.notify_datetime <= now + timedelta(hours=advance):
                 event.notified_for_advance = advance
                 yield event
                 break
@@ -146,7 +162,7 @@ def filter_notified_events(events, config):
 
 def sort_events(events):
     def sort_key(event):
-        return event.date
+        return event.notify_datetime
     return sorted(events, key=sort_key)
 
 

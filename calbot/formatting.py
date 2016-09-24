@@ -44,3 +44,12 @@ def format_event(user_config, event):
     result = user_config.format.format(**event.to_dict())
     locale.resetlocale()
     return result
+
+
+class BlankFormat:
+    """
+    A special class which is always formatted as empty string
+    """
+
+    def __format__(self, format_spec):
+        return ''

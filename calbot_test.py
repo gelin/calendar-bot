@@ -54,9 +54,11 @@ def test_read_calendar():
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'TEST' == calendar.name, calendar.name
     assert 'Just a test calendar' == calendar.description, calendar.description
-    assert datetime.datetime(2016, 6, 24, 0, 0, 0, tzinfo=pytz.UTC) == calendar.all_events[0].date, calendar.all_events[0].date
+    assert datetime.date(2016, 6, 24) == calendar.all_events[0].date, calendar.all_events[0].date
+    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == calendar.all_events[0].time, calendar.all_events[0].time
     assert 'Событие по-русски' == calendar.all_events[0].title, calendar.all_events[0].title
-    assert datetime.datetime(2016, 6, 23, 0, 0, 0, tzinfo=pytz.UTC) == calendar.all_events[1].date, calendar.all_events[1].date
+    assert datetime.date(2016, 6, 23) == calendar.all_events[1].date, calendar.all_events[1].date
+    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == calendar.all_events[1].time, calendar.all_events[1].time
     assert 'Event title' == calendar.all_events[1].title, calendar.all_events[1].title
 
 
@@ -71,7 +73,7 @@ def test_filter_future_events():
     events = [Event(component_past, timezone), Event(component_now, timezone), Event(component_future, timezone)]
     result = list(filter_future_events(events, 1))
     assert 1 == len(result), len(result)
-    assert component_now.decoded('dtstart') == result[0].date, result
+    assert component_now.decoded('dtstart') == result[0].notify_datetime, result
 
 
 def test_filter_notified_events():
@@ -101,8 +103,8 @@ def test_filter_notified_events():
     config = TestCalendarConfig()
     result = list(filter_notified_events(events, config))
     assert 2 == len(result), result
-    assert component_now.decoded('dtstart') == result[0].date, result
-    assert component_future24.decoded('dtstart') == result[1].date, result
+    assert component_now.decoded('dtstart') == result[0].notify_datetime, result
+    assert component_future24.decoded('dtstart') == result[1].notify_datetime, result
 
 
 def test_date_only_event():
@@ -110,10 +112,11 @@ def test_date_only_event():
     component = _get_component()
     component.add('dtstart', datetime.date.today())
     event = Event(component, timezone, datetime.time(10, 0))
-    assert isinstance(event.date, datetime.datetime), event.date.__class__.__name__
-    assert 10 == event.date.hour, event.date
-    assert 0 == event.date.minute, event.date
-    assert pytz.UTC == event.date.tzinfo, event.date
+    assert isinstance(event.date, datetime.date), event.date.__class__.__name__
+    assert event.time is None, event.time
+    assert 10 == event.notify_datetime.hour, event.date
+    assert 0 == event.notify_datetime.minute, event.date
+    assert pytz.UTC == event.notify_datetime.tzinfo, event.date
 
 
 def test_default_user_confg():
@@ -192,3 +195,13 @@ def test_sort_events():
     assert events[2] == result[0], result
     assert events[1] == result[1], result
     assert events[0] == result[2], result
+
+
+def test_format_date_only_event():
+    timezone = pytz.UTC
+    component = _get_component()
+    component.add('dtstart', datetime.date(2016, 6, 23))
+    event = Event(component, timezone, datetime.time(10, 0))
+    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+    result = format_event(user_config, event)
+    assert 'summary\nThursday, 23 June 2016\nlocation\ndescription' == result, result
