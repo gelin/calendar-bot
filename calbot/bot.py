@@ -103,7 +103,7 @@ def run_bot(config):
         updater.bot.set_webhook(webhook_url)
         logger.info('set webhook to %s' % webhook_url)
     else:
-        updater.start_polling(clean=True,
+        updater.start_polling(clean=False,
                               poll_interval=config.poll_interval,
                               timeout=config.timeout,
                               network_delay=config.network_delay,
