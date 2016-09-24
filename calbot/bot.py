@@ -32,8 +32,8 @@ from calbot.ical import Calendar, sample_event
 
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
-/add ical_url @channel — to add new iCal to be sent to a channel
-/list — to see all configured calendars
+/add ical_url @channel — add new iCal to be sent to a channel
+/list — see all configured calendars
 /del id — remove calendar by id
 /format [new format] — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
 /lang [language] — get or set language to print the event, may affect the week day name
