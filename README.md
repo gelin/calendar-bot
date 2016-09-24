@@ -2,7 +2,7 @@
 
 It's the bot for [Telegram](https://telegram.org/).
 
-It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) files of Google Calendars.
+It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) file of a Google Calendars.
 And sends notifications to a [telegram channel](https://telegram.org/faq_channels) some hours in advance to the events in the calendar.
 Use it to mirror calendar events to the channel and notify the subscribers.
 
@@ -42,7 +42,7 @@ ID NAME CHANNEL
 
 ### /del
 
-`/del id` — removes calendar by id
+`/del id` — remove calendar by id
 
 Deletes the calendar from the list of the configured calendars.
 
