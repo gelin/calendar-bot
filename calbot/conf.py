@@ -460,6 +460,11 @@ class CalendarConfig:
         config_file = CalendarsConfigFile(self.vardir, self.user_id)
         config_parser = config_file.read_parser()
 
+        if not config_parser.has_section(self.id):
+            config_parser.add_section(self.id)
+            config_parser.set(self.id, 'url', self.url)
+            config_parser.set(self.id, 'channel_id', self.channel_id)
+
         self.verified = True
         config_parser.set(self.id, 'verified', 'true')
         self.name = calendar.name
@@ -516,7 +521,7 @@ class ConfigFile:
         :param parser: ConfigParser to be read from the file
         :return: None
         """
-        parser.read(self.path)
+        parser.read(self.path, encoding='UTF-8')
 
     def read_parser(self):
         """
@@ -534,7 +539,7 @@ class ConfigFile:
         :return: None
         """
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
-        with open(self.path, 'wt') as file:
+        with open(self.path, 'wt', encoding='UTF-8') as file:
             parser.write(file)
 
 

@@ -27,7 +27,7 @@ import shutil
 from icalendar.cal import Component
 
 from calbot.formatting import normalize_locale, format_event
-from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT
+from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT, CalendarsConfigFile
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events, sort_events
 
 
@@ -49,10 +49,12 @@ def test_format_event():
 
 
 def test_read_calendar():
-    config = CalendarConfig.new(UserConfig.new(Config('calbot.cfg.sample'), 'TEST'), '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    config = CalendarConfig.new(
+        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
     calendar = Calendar(config)
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
-    assert 'TEST' == calendar.name, calendar.name
+    assert 'Тест' == calendar.name, calendar.name
     assert 'Just a test calendar' == calendar.description, calendar.description
     assert datetime.date(2016, 6, 24) == calendar.all_events[0].date, calendar.all_events[0].date
     assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == calendar.all_events[0].time, calendar.all_events[0].time
@@ -126,16 +128,14 @@ def test_default_user_confg():
     assert user_config.id == 'TEST'
     assert user_config.format == DEFAULT_FORMAT
     assert user_config.language is None
-    assert user_config.advance == [24, 48]
+    assert user_config.advance == [48, 24]
 
 
 def test_default_calendar_config():
     calendar_config = CalendarConfig.new(
-        UserConfig.new(
-            Config('calbot.cfg.sample'),
-            'TEST'),
+        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
         '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    assert calendar_config.advance == [24, 48]
+    assert calendar_config.advance == [48, 24]
 
 
 def test_set_format():
@@ -206,3 +206,18 @@ def test_format_date_only_event():
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     result = format_event(user_config, event)
     assert 'summary\nThursday, 23 June 2016\nlocation\ndescription' == result, result
+
+
+def test_save_calendar():
+    calendar_config = CalendarConfig.new(
+        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    calendar = Calendar(calendar_config)
+    calendar_config.save_calendar(calendar)
+    config_file = CalendarsConfigFile('var', 'TEST')
+    calendar_config = CalendarConfig.load(
+        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+        config_file.read_parser(),
+        '1')
+    assert calendar_config.name == 'Тест', calendar_config.name
+    shutil.rmtree('var/TEST')
