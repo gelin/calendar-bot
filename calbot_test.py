@@ -29,6 +29,7 @@ from icalendar.cal import Component
 from calbot.formatting import normalize_locale, format_event
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT, CalendarsConfigFile
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events, sort_events
+from calbot.stats import update_stats, get_stats
 
 
 def _get_component():
@@ -220,4 +221,21 @@ def test_save_calendar():
         config_file.read_parser(),
         '1')
     assert calendar_config.name == 'Тест', calendar_config.name
+    shutil.rmtree('var/TEST')
+
+
+def test_update_stats():
+    config = Config('calbot.cfg.sample')
+    update_stats(config)
+    stats1 = get_stats(config)
+    calendar_config = CalendarConfig.new(
+        UserConfig.new(config, 'TEST'),
+        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    calendar = Calendar(calendar_config)
+    calendar_config.save_calendar(calendar)
+    update_stats(config)
+    stats2 = get_stats(config)
+    assert (stats2.users - stats1.users) == 1, '%i -> %i' % (stats1.users, stats2.users)
+    assert (stats2.calendars - stats1.calendars) == 1, '%i -> %i' % (stats1.calendars, stats2.calendars)
+    assert stats2.events == stats1.events, '%i -> %i' % (stats1.events, stats2.events)
     shutil.rmtree('var/TEST')
