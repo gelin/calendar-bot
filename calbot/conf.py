@@ -125,6 +125,8 @@ class Config:
         """the bot token"""
         self.interval = config.getint('bot', 'interval', fallback=3600)
         """the interval to reread calendars, in seconds"""
+        self.stats_interval = config.getint('bot', 'stats_interval', fallback=3600)
+        """the interval to update statistics, in seconds"""
         self.bootstrap_retries = config.getint('bot', 'bootstrap_retries', fallback=0)
         """Whether the bootstrapping phase of the Updater will retry on failures on the Telegram server."""
         self.poll_interval = config.getfloat('polling', 'poll_interval', fallback=0.0)

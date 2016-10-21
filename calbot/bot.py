@@ -27,6 +27,7 @@ from telegram.ext import Job
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
+from calbot import stats
 from calbot.formatting import normalize_locale, format_event
 from calbot.ical import Calendar, sample_event
 
@@ -88,6 +89,11 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('advance', get_set_advance_with_config,
                                           allow_edited=True, pass_args=True))
 
+    def get_stats_with_config(bot, update):
+        get_stats(bot, update, config)
+    dispatcher.add_handler(CommandHandler('stats', get_stats_with_config,
+                                          allow_edited=True))
+
     dispatcher.add_handler(MessageHandler([Filters.command], unknown))
 
     dispatcher.add_error_handler(error)
@@ -115,6 +121,9 @@ def run_bot(config):
     for calendar in config.all_calendars():
         queue_calendar_update(updater.job_queue, calendar, start_delay)
         start_delay += 1
+
+    stats_job = Job(update_stats, config.stats_interval, repeat=True, context=config)
+    updater.job_queue.put(stats_job, next_t=0)
 
     updater.idle()
 
@@ -346,6 +355,20 @@ def get_set_advance(bot, update, args, config):
         set_advance(args)
 
 
+def get_stats(bot, update, config):
+    """
+    /stats command handler.
+    Prints the current known statistics.
+    :param bot: Bot instance
+    :param update: Update instance
+    :param config: Config instance
+    :return: None
+    """
+    message = update.message or update.edited_message
+    text = str(stats.get_stats(config))
+    bot.sendMessage(chat_id=message.chat_id, text=text)
+
+
 def unknown(bot, update):
     """
     Handler for unknown command. Prints error message.
@@ -394,6 +417,17 @@ def update_calendar(bot, job):
         if not config.verified:
             bot.sendMessage(chat_id=config.user_id,
                             text='Failed to process calendar %s:\n%s' % (config.id, e))
+
+
+def update_stats(bot, job):
+    """
+    Job queue callback to update statistics.
+    :param bot: Bot instance
+    :param job: it's context has Config instance
+    :return: None
+    """
+    config = job.context
+    stats.update_stats(config)
 
 
 def send_event(bot, config, event):
