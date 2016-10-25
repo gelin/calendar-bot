@@ -28,6 +28,7 @@ from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
 from calbot import stats
+from calbot.conf import CalendarConfig
 from calbot.formatting import normalize_locale, format_event
 from calbot.ical import Calendar, sample_event
 
@@ -105,9 +106,9 @@ def run_bot(config):
                               url_path=config.token,
                               webhook_url=webhook_url,
                               bootstrap_retries=config.bootstrap_retries)
-        logger.info('started webhook on %s:%s' % (config.listen, config.port))
+        logger.info('Started webhook on %s:%s' % (config.listen, config.port))
         updater.bot.set_webhook(webhook_url)
-        logger.info('set webhook to %s' % webhook_url)
+        logger.info('Set webhook to %s' % webhook_url)
     else:
         updater.start_polling(clean=False,
                               poll_interval=config.poll_interval,
@@ -115,7 +116,7 @@ def run_bot(config):
                               network_delay=config.network_delay,
                               bootstrap_retries=config.bootstrap_retries,
                               )
-        logger.info('started polling')
+        logger.info('Started polling')
 
     start_delay = 0
     for calendar in config.all_calendars():
@@ -147,7 +148,7 @@ def start(bot, update):
     :param update: Update instance
     :return: None
     """
-    logger.info('started from %s', update.message.chat_id)
+    logger.info('Started from %s', update.message.chat_id)
     bot.sendMessage(chat_id=update.message.chat_id, text=GREETING)
 
 
@@ -216,7 +217,8 @@ def delete_calendar(bot, update, args, job_queue, config):
         try:
             config.delete_calendar(user_id, calendar_id)
             for job in job_queue.jobs():
-                if job.context.id == calendar_id:
+                if (hasattr(job, 'context') and isinstance(job.context, CalendarConfig)
+                        and job.context.id == calendar_id):
                     job.schedule_removal()
             bot.sendMessage(chat_id=user_id,
                             text="Calendar %s is deleted" % calendar_id)
@@ -438,4 +440,5 @@ def send_event(bot, config, event):
     :param event: Event instance, read from ical
     :return: None
     """
+    logger.info('Sending event %s "%s" to %s', event.id, event.title, config.channel_id)
     bot.sendMessage(chat_id=config.channel_id, text=format_event(config, event))
