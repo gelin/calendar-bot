@@ -23,6 +23,7 @@ from datetime import datetime, date, timedelta
 from urllib.request import urlopen
 import pytz
 import icalendar
+from dateutil import rrule
 
 from calbot.formatting import BlankFormat
 
@@ -87,23 +88,30 @@ class Event:
         self.title = str(vevent.get('SUMMARY'))
         """title of the event"""
         self.date = None
-        """calendar event date"""
+        """event (start) date"""
         self.time = None
-        """calendar event time, can be None"""
+        """event (start) time, can be None"""
         self.notify_datetime = None
         """calendar event datetime, relative to which to calculate notification moment,
         uses day_start if time for current event is None"""
 
         # DTSTART is always in UTC, not possible to get event-specific timezone
+        # TODO: now iCal has TZID attribute for DTSTART and DTEND, need to take care on it
         dtstart = vevent.get('DTSTART').dt
         if isinstance(dtstart, datetime):
             dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
             self.date = dtstarttz.date()
             self.time = dtstarttz.timetz()
-            self.notify_datetime = datetime.combine(self.date, self.time)
         elif isinstance(dtstart, date):
             self.date = dtstart
-            self.notify_datetime = datetime.combine(self.date, day_start.replace(tzinfo=timezone))
+
+        self.repeat_rule = None
+        """event repeat rule, can be None"""
+        if vevent.get('RRULE') is not None:
+            self.repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
+            self.find_next_repeat_datetime(timezone)
+
+        self.set_notify_datetime(timezone, day_start)
 
         self.location = str(vevent.get('LOCATION'))
         """the event location as string"""
@@ -111,6 +119,24 @@ class Event:
         """the event description"""
         self.notified_for_advance = None
         """hours in advance for which this event should be notified"""
+
+    def set_notify_datetime(self, timezone, day_start):
+        if self.time is not None:
+            self.notify_datetime = datetime.combine(self.date, self.time)
+        else:
+            self.notify_datetime = datetime.combine(self.date, day_start.replace(tzinfo=timezone))
+
+    # TODO: replace with making clones of the event for the datetime inverval
+    def find_next_repeat_datetime(self, timezone):
+        if self.time is not None:
+            rule = rrule.rrulestr(self.repeat_rule, dtstart=datetime.combine(self.date, self.time))
+            next_datetime = rule.after(datetime.now(timezone))
+            self.date = next_datetime.date()
+            self.time = next_datetime.timetz()
+        else:
+            rule = rrule.rrulestr(self.repeat_rule, dtstart=self.date)
+            next_date = rule.after(date.today())
+            self.date = next_date
 
     def to_dict(self):
         """

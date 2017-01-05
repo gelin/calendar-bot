@@ -57,12 +57,18 @@ def test_read_calendar():
     assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
     assert 'Тест' == calendar.name, calendar.name
     assert 'Just a test calendar' == calendar.description, calendar.description
-    assert datetime.date(2016, 6, 24) == calendar.all_events[0].date, calendar.all_events[0].date
-    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == calendar.all_events[0].time, calendar.all_events[0].time
-    assert 'Событие по-русски' == calendar.all_events[0].title, calendar.all_events[0].title
-    assert datetime.date(2016, 6, 23) == calendar.all_events[1].date, calendar.all_events[1].date
-    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == calendar.all_events[1].time, calendar.all_events[1].time
-    assert 'Event title' == calendar.all_events[1].title, calendar.all_events[1].title
+    event = calendar.all_events[0]
+    # assert datetime.date(2017, 1, 4) == event.date, event.date    # the date varies
+    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Daily event' == event.title, event.title
+    event = calendar.all_events[1]
+    assert datetime.date(2016, 6, 24) == event.date, event.date
+    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Событие по-русски' == event.title, event.title
+    event = calendar.all_events[2]
+    assert datetime.date(2016, 6, 23) == event.date, event.date
+    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Event title' == event.title, event.title
 
 
 def test_filter_future_events():
@@ -239,3 +245,20 @@ def test_update_stats():
     assert (stats2.calendars - stats1.calendars) == 1, '%i -> %i' % (stats1.calendars, stats2.calendars)
     assert stats2.events == stats1.events, '%i -> %i' % (stats1.events, stats2.events)
     shutil.rmtree('var/TEST')
+
+
+def test_repeat_event():
+    config = CalendarConfig.new(
+        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+    calendar = Calendar(config)
+    event = calendar.all_events[0]
+    assert 'FREQ=DAILY' == event.repeat_rule
+    if datetime.datetime.now(tz=pytz.timezone('Asia/Omsk')).hour < 10:
+        assert datetime.date.today() == event.date, event.date
+        assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    else:
+        assert (datetime.date.today() + datetime.timedelta(days=1)) == event.date, event.date
+        assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Daily event' == event.title, event.title
+    assert event.notify_datetime.date() >= datetime.date.today(), event.notify_datetime
