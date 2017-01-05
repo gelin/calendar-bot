@@ -74,7 +74,7 @@ class Calendar:
             self.description = str(vcalendar.get('X-WR-CALDESC'))
             for component in vcalendar.walk():
                 if component.name == 'VEVENT':
-                    yield Event(component, self.timezone, self.day_start)
+                    yield Event.from_vevent(component, self.timezone, self.day_start)
 
 
 class Event:
@@ -82,61 +82,122 @@ class Event:
     Calendar event as it was read from ical file.
     """
 
-    def __init__(self, vevent, timezone, day_start=None):
-        self.id = str(vevent.get('UID'))
+    def __init__(self, **kwargs):
+        self.id = kwargs['id']
         """unique id of the event"""
-        self.title = str(vevent.get('SUMMARY'))
+        self.title = kwargs['title']
         """title of the event"""
-        self.date = None
+        self.date = kwargs.get('date')
         """event (start) date"""
-        self.time = None
+        self.time = kwargs.get('time')
         """event (start) time, can be None"""
-        self.notify_datetime = None
+        self.notify_datetime = kwargs.get('notify_datetime')
         """calendar event datetime, relative to which to calculate notification moment,
         uses day_start if time for current event is None"""
+        self.repeat_rule = kwargs.get('repeat_rule')
+        """event repeat rule, can be None"""
+        self.location = kwargs.get('location')
+        """the event location as string"""
+        self.description = kwargs.get('description')
+        """the event description"""
+        self.notified_for_advance = kwargs.get('notified_for_advance')
+        """hours in advance for which this event should be notified"""
+        self.day_start = kwargs.get('day_start')
+        """notification time for full-day events"""
+
+    @classmethod
+    def from_vevent(cls, vevent, timezone, day_start=None):
+        """
+        Creates calendar event from vEvent component read from ical file.
+        :param vevent:  vEvent component
+        :param timezone:    default timezone for the calendar
+        :param day_start:   notification moment for full-day events
+        :return: calendar event instance
+        """
+
+        event_date = None
+        event_time = None
+        notify_datetime = None
 
         # DTSTART is always in UTC, not possible to get event-specific timezone
         # TODO: now iCal has TZID attribute for DTSTART and DTEND, need to take care on it
         dtstart = vevent.get('DTSTART').dt
         if isinstance(dtstart, datetime):
             dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
-            self.date = dtstarttz.date()
-            self.time = dtstarttz.timetz()
+            event_date = dtstarttz.date()
+            event_time = dtstarttz.timetz()
+            notify_datetime = datetime.combine(event_date, event_time)
         elif isinstance(dtstart, date):
-            self.date = dtstart
+            event_date = dtstart
+            notify_datetime = datetime.combine(event_date, day_start.replace(tzinfo=timezone))
 
-        self.repeat_rule = None
-        """event repeat rule, can be None"""
+        repeat_rule = None
         if vevent.get('RRULE') is not None:
-            self.repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
-            self.find_next_repeat_datetime(timezone)
+            repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
 
-        self.set_notify_datetime(timezone, day_start)
+        return cls(
+            id=str(vevent.get('UID')),
+            title=str(vevent.get('SUMMARY')),
+            date=event_date,
+            time=event_time,
+            notify_datetime=notify_datetime,
+            repeat_rule=repeat_rule,
+            location=str(vevent.get('LOCATION')),
+            description=str(vevent.get('DESCRIPTION')),
+            day_start=day_start.replace(tzinfo=timezone) if day_start is not None else None
+        )
 
-        self.location = str(vevent.get('LOCATION'))
-        """the event location as string"""
-        self.description = str(vevent.get('DESCRIPTION'))
-        """the event description"""
-        self.notified_for_advance = None
-        """hours in advance for which this event should be notified"""
+    @classmethod
+    def copy_for_date(cls, event, newdatetime):
 
-    def set_notify_datetime(self, timezone, day_start):
+        event_id = event.id
+        event_date = None
+        event_time = None
+        notify_datetime = None
+
+        if isinstance(newdatetime, datetime):
+            event_date = newdatetime.date()
+            event_time = newdatetime.timetz()
+            notify_datetime = datetime.combine(event_date, event_time)
+            event_id += '_' + notify_datetime.isoformat()
+        elif isinstance(newdatetime, date):
+            event_date = newdatetime
+            notify_datetime = datetime.combine(event_date, event.day_start)
+            event_id += '_' + event_date.isoformat()
+
+        return cls(
+            id=event_id,
+            title=event.title,
+            date=event_date,
+            time=event_time,
+            notify_datetime=notify_datetime,
+            location=event.location,
+            description=event.description,
+            day_start=event.day_start
+        )
+
+    def repeat_between(self, after, before):
+        """
+        Creates copies of this event repeating between specified datetime.
+        The resulting list never includes the original (this) event.
+        :param after:   start of the interval (exclusive)
+        :param before:  end of the interval (inclusive)
+        :return:    list of event repeats, each with it's own unique id
+        """
+        if self.repeat_rule is None:
+            return []
+
         if self.time is not None:
-            self.notify_datetime = datetime.combine(self.date, self.time)
+            dtstart = datetime.combine(self.date, self.time)
         else:
-            self.notify_datetime = datetime.combine(self.date, day_start.replace(tzinfo=timezone))
+            dtstart = self.date
+        rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
+        dates = rule.between(after, before, inc=True)
 
-    # TODO: replace with making clones of the event for the datetime inverval
-    def find_next_repeat_datetime(self, timezone):
-        if self.time is not None:
-            rule = rrule.rrulestr(self.repeat_rule, dtstart=datetime.combine(self.date, self.time))
-            next_datetime = rule.after(datetime.now(timezone))
-            self.date = next_datetime.date()
-            self.time = next_datetime.timetz()
-        else:
-            rule = rrule.rrulestr(self.repeat_rule, dtstart=self.date)
-            next_date = rule.after(date.today())
-            self.date = next_date
+        dates = list(filter(lambda d: d != dtstart, dates))
+        dates = list(filter(lambda d: d != after, dates))
+        events = list(map(lambda d: Event.copy_for_date(self, d), dates))
+        return events
 
     def to_dict(self):
         """
@@ -198,6 +259,6 @@ def _get_sample_event():
     component.add('location', 'It happens in the Milky Way')
     component.add('description', 'The sample event is to demonstrate how the event can be formatted')
     component.add('dtstart', datetime.now(tz=pytz.UTC))
-    return Event(component, pytz.UTC)
+    return Event.from_vevent(component, pytz.UTC)
 
 sample_event = _get_sample_event()

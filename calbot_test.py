@@ -43,7 +43,7 @@ def _get_component():
 def test_format_event():
     component = _get_component()
     component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
-    event = Event(component, pytz.UTC)
+    event = Event.from_vevent(component, pytz.UTC)
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     result = format_event(user_config, event)
     assert 'summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription' == result, result
@@ -79,7 +79,7 @@ def test_filter_future_events():
     component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
     component_future = _get_component()
     component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
-    events = [Event(component_past, timezone), Event(component_now, timezone), Event(component_future, timezone)]
+    events = [Event.from_vevent(component_past, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_future, timezone)]
     result = list(filter_future_events(events, 1))
     assert 1 == len(result), len(result)
     assert component_now.decoded('dtstart') == result[0].notify_datetime, result
@@ -108,7 +108,7 @@ def test_filter_notified_events():
             self.id = 1
             self.last_notified = 48
 
-    events = [Event(component_now, timezone), Event(component_future24, timezone), Event(component_future48, timezone)]
+    events = [Event.from_vevent(component_now, timezone), Event.from_vevent(component_future24, timezone), Event.from_vevent(component_future48, timezone)]
     config = TestCalendarConfig()
     result = list(filter_notified_events(events, config))
     assert 2 == len(result), result
@@ -120,7 +120,7 @@ def test_date_only_event():
     timezone = pytz.UTC
     component = _get_component()
     component.add('dtstart', datetime.date.today())
-    event = Event(component, timezone, datetime.time(10, 0))
+    event = Event.from_vevent(component, timezone, datetime.time(10, 0))
     assert isinstance(event.date, datetime.date), event.date.__class__.__name__
     assert event.time is None, event.time
     assert 10 == event.notify_datetime.hour, event.date
@@ -168,7 +168,7 @@ def test_set_language():
 def test_format_event_ru():
     component = _get_component()
     component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
-    event = Event(component, pytz.UTC)
+    event = Event.from_vevent(component, pytz.UTC)
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     user_config.language = 'ru_RU.UTF-8'
     result = format_event(user_config, event)
@@ -198,7 +198,7 @@ def test_sort_events():
     component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
     component_future = _get_component()
     component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
-    events = [Event(component_future, timezone), Event(component_now, timezone), Event(component_past, timezone)]
+    events = [Event.from_vevent(component_future, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_past, timezone)]
     result = list(sort_events(events))
     assert events[2] == result[0], result
     assert events[1] == result[1], result
@@ -209,7 +209,7 @@ def test_format_date_only_event():
     timezone = pytz.UTC
     component = _get_component()
     component.add('dtstart', datetime.date(2016, 6, 23))
-    event = Event(component, timezone, datetime.time(10, 0))
+    event = Event.from_vevent(component, timezone, datetime.time(10, 0))
     user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
     result = format_event(user_config, event)
     assert 'summary\nThursday, 23 June 2016\nlocation\ndescription' == result, result
@@ -247,18 +247,53 @@ def test_update_stats():
     shutil.rmtree('var/TEST')
 
 
-def test_repeat_event():
-    config = CalendarConfig.new(
-        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    calendar = Calendar(config)
-    event = calendar.all_events[0]
-    assert 'FREQ=DAILY' == event.repeat_rule
-    if datetime.datetime.now(tz=pytz.timezone('Asia/Omsk')).hour < 10:
-        assert datetime.date.today() == event.date, event.date
-        assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    else:
-        assert (datetime.date.today() + datetime.timedelta(days=1)) == event.date, event.date
-        assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Daily event' == event.title, event.title
-    assert event.notify_datetime.date() >= datetime.date.today(), event.notify_datetime
+# def test_repeat_event():
+#     config = CalendarConfig.new(
+#         UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+#         '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+#     calendar = Calendar(config)
+#     event = calendar.all_events[0]
+#     assert 'FREQ=DAILY' == event.repeat_rule
+#     if datetime.datetime.now(tz=pytz.timezone('Asia/Omsk')).hour < 10:
+#         assert datetime.date.today() == event.date, event.date
+#         assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+#     else:
+#         assert (datetime.date.today() + datetime.timedelta(days=1)) == event.date, event.date
+#         assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+#     assert 'Daily event' == event.title, event.title
+#     assert event.notify_datetime.date() >= datetime.date.today(), event.notify_datetime
+
+
+def test_repeat_event_list_no_repeat():
+    event = Event(
+        id='TEST EVENT',
+        title='REPEATING EVENT',
+        date=datetime.date(2017, 1, 4),
+        time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
+    )
+    repeats = event.repeat_between(
+        datetime.datetime(2017, 1, 4, 10, 0, 0, tzinfo=pytz.UTC),
+        datetime.datetime(2017, 1, 8, 10, 0, 0, tzinfo=pytz.UTC))
+    assert repeats == [], repeats
+
+
+def test_repeat_event_list():
+    event = Event(
+        id='TEST EVENT',
+        title='REPEATING EVENT',
+        date=datetime.date(2017, 1, 4),
+        time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
+        repeat_rule='FREQ=DAILY'
+    )
+    repeats = event.repeat_between(
+        datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
+        datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
+    assert len(repeats) == 2, repeats
+    repeat = repeats[0]
+    assert repeat.id == 'TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id
+    assert repeat.date == datetime.date(2017, 1, 5), repeat.date
+    assert repeat.time == datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time
+    repeat = repeats[1]
+    assert repeat.id == 'TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id
+    assert repeat.date == datetime.date(2017, 1, 6), repeat.date
+    assert repeat.time == datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time
