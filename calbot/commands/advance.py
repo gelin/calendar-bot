@@ -86,8 +86,9 @@ def set_advance(bot, update, config):
         return END
     except Exception as e:
         logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
-        text = 'Failed to update advance hours:\n%s\n\nTry again or /cancel' % e
+        text = 'Failed to update advance hours:\n%s' % e
         message.reply_text(text)
+        message.reply_text('Try again or /cancel')
         return SETTING
 
 

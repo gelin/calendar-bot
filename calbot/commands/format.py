@@ -67,11 +67,11 @@ def get_format(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Current format:\n\n%s\n\nSample event:\n\n%s\n\nType a new format string to set or /cancel' % (
-        user_config.format,
-        format_event(user_config, sample_event)
-    )
-    message.reply_text(text)
+    message.reply_text('Current format:')
+    message.reply_text(user_config.format)
+    message.reply_text('Sample event:')
+    message.reply_text(format_event(user_config, sample_event))
+    message.reply_text('Type a new format string to set or /cancel')
     return SETTING
 
 
@@ -83,15 +83,13 @@ def set_format(bot, update, config):
     new_format = message.text.strip()
     try:
         user_config.set_format(new_format)
-        text = 'Format is updated.\nSample event:\n\n%s' % (
-            format_event(user_config, sample_event)
-        )
-        message.reply_text(text)
+        message.reply_text('Format is updated.\nSample event:')
+        message.reply_text(format_event(user_config, sample_event))
         return END
     except Exception as e:
         logger.warning('Failed to update format for user %s', user_id, exc_info=True)
-        text = 'Failed to update format:\n%s\n\nTry again or /cancel' % e
-        message.reply_text(text)
+        message.reply_text('Failed to update format:\n%s' % e)
+        message.reply_text('Try again or /cancel')
         return SETTING
 
 
@@ -100,6 +98,6 @@ def cancel(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Cancelled.\nCurrent format:\n\n%s' % user_config.format
-    message.reply_text(text)
+    message.reply_text('Cancelled.\nCurrent format:')
+    message.reply_text(user_config.format)
     return END

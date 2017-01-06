@@ -67,11 +67,9 @@ def get_lang(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Current language is %s\nSample event:\n\n%s\n\nType another language name to set or /cancel' % (
-        user_config.language,
-        format_event(user_config, sample_event)
-    )
-    message.reply_text(text)
+    message.reply_text('Current language is %s\nSample event:' % user_config.language)
+    message.reply_text(format_event(user_config, sample_event))
+    message.reply_text('Type another language name to set or /cancel')
     return SETTING
 
 
@@ -86,21 +84,22 @@ def set_lang(bot, update, config):
         normalized_locale = normalize_locale(new_lang)
         user_config.set_language(normalized_locale)
         try:
-            text = 'Language is updated to %s\nSample event:\n\n%s' % (
-                normalized_locale,
-                format_event(user_config, sample_event)
-            )
-            message.reply_text(text)
+            sample = format_event(user_config, sample_event)
+            message.reply_text('Language is updated to %s\nSample event:' % normalized_locale)
+            message.reply_text(sample)
             return END
         except locale.Error as e:
             if old_lang:
                 user_config.set_language(old_lang)
             logger.warning('Unsupported language "%s" for user %s', new_lang, user_id, exc_info=True)
-            message.reply_text('Unsupported language:\n%s\n\nTry again or /cancel' % e)
+            message.reply_text('Unsupported language:\n%s' % e)
+            message.reply_text('Try again or /cancel')
             return SETTING
     except Exception as e:
         logger.warning('Failed to update language to "%s" for user %s', new_lang, user_id, exc_info=True)
-        message.reply_text('Failed to update language:\n%s\n\nTry again or /cancel' % e)
+        message.reply_text('Failed to update language:\n%s' % e)
+        message.reply_text('Try again or /cancel')
+        return SETTING
 
 
 def cancel(bot, update, config):

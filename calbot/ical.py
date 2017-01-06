@@ -277,13 +277,13 @@ def sort_events(events):
 
 
 def _get_sample_event():
-    now = datetime.now(tz=pytz.UTC)
+    now = datetime.now(tz=pytz.timezone('Asia/Omsk'))
     return Event(
         id='SAMPLE EVENT',
         title='This is sample event',
         location='It happens in Milky Way',
         description='The sample event is to demonstrate how the event can be formatted',
         date=now.date(),
-        time=now.time())
+        time=now.timetz())
 
 sample_event = _get_sample_event()
