@@ -28,8 +28,8 @@ from telegram.ext import Updater
 from calbot import stats
 from calbot.conf import CalendarConfig
 from calbot.formatting import format_event
-from calbot.ical import Calendar, sample_event
-from calbot.commands import lang, advance
+from calbot.ical import Calendar
+from calbot.commands import format, lang, advance
 
 
 __all__ = ['run_bot']
@@ -38,7 +38,7 @@ GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — add new iCal to be sent to a channel
 /list — see all configured calendars
 /del id — remove calendar by id
-/format [new format] — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
+/format — get and set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
 /lang — get and set language to print the event, may affect the week day name
 /advance — get and set calendar events advance, i.e. how many hours before the event to publish it
 '''
@@ -77,11 +77,7 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('del', delete_calendar_from_config,
                                           allow_edited=True, pass_args=True, pass_job_queue=True))
 
-    def get_set_format_with_config(bot, update):
-        get_set_format(bot, update, config)
-    dispatcher.add_handler(CommandHandler('format', get_set_format_with_config,
-                                          allow_edited=True))
-
+    dispatcher.add_handler(format.create_handler(config))
     dispatcher.add_handler(lang.create_handler(config))
     dispatcher.add_handler(advance.create_handler(config))
 
@@ -222,46 +218,6 @@ def delete_calendar(bot, update, args, job_queue, config):
             logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
             bot.sendMessage(chat_id=user_id,
                             text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
-
-
-def get_set_format(bot, update, config):
-    """
-    /format command handler.
-    Prints the current format or sets the new format for the calendar event.
-    :param bot: Bot instance
-    :param update: Update instance
-    :param config: Config instance
-    :return: None
-    """
-
-    def print_format():
-        text = 'Current format:\n%s\nSample event:\n%s' % (
-            user_config.format,
-            format_event(user_config, sample_event)
-        )
-        bot.sendMessage(chat_id=user_id, text=text)
-
-    def set_format(format):
-        try:
-            user_config.set_format(format)
-            text = 'Format is updated\nSample event:\n%s' % (
-                format_event(user_config, sample_event)
-            )
-            bot.sendMessage(chat_id=user_id, text=text)
-        except Exception as e:
-            logger.warning('Failed to update format for user %s', user_id, exc_info=True)
-            bot.sendMessage(chat_id=user_id,
-                            text='Failed to update format:\n%s' % e)
-
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-    parts = message.text.split(' ', maxsplit=1)
-    if len(parts) < 2:
-        print_format()
-    else:
-        new_format = parts[1]
-        set_format(new_format)
 
 
 def get_stats(bot, update, config):

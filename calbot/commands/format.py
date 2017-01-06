@@ -31,7 +31,7 @@ from calbot.ical import sample_event
 
 __all__ = ['create_handler']
 
-logger = logging.getLogger('commands.lang')
+logger = logging.getLogger('commands.format')
 
 SETTING = 0
 END = ConversationHandler.END
@@ -39,68 +39,60 @@ END = ConversationHandler.END
 
 def create_handler(config):
     """
-    Creates handler for /lang command.
+    Creates handler for /format command.
     :return: ConversationHandler
     """
 
-    def get_lang_with_config(bot, update):
-        return get_lang(bot, update, config)
+    def get_format_with_config(bot, update):
+        return get_format(bot, update, config)
 
-    def set_lang_with_config(bot, update):
-        return set_lang(bot, update, config)
+    def set_format_with_config(bot, update):
+        return set_format(bot, update, config)
 
     def cancel_with_config(bot, update):
         return cancel(bot, update, config)
 
     return ConversationHandler(
-        entry_points=[CommandHandler('lang', get_lang_with_config)],
+        entry_points=[CommandHandler('format', get_format_with_config)],
         states={
-            SETTING: [MessageHandler(Filters.text, set_lang_with_config)],
+            SETTING: [MessageHandler(Filters.text, set_format_with_config)],
         },
         fallbacks=[CommandHandler('cancel', cancel_with_config)],
         allow_reentry=True
     )
 
 
-def get_lang(bot, update, config):
+def get_format(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Current language is %s\nSample event:\n\n%s\n\nType another language name to set or /cancel' % (
-        user_config.language,
+    text = 'Current format:\n\n%s\n\nSample event:\n\n%s\n\nType a new format string to set or /cancel' % (
+        user_config.format,
         format_event(user_config, sample_event)
     )
     message.reply_text(text)
     return SETTING
 
 
-def set_lang(bot, update, config):
-    message = update.message
+def set_format(bot, update, config):
+    message = update.message or update.edited_message
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    new_lang = message.text.strip()
-    old_lang = user_config.language
+    new_format = message.text.strip()
     try:
-        normalized_locale = normalize_locale(new_lang)
-        user_config.set_language(normalized_locale)
-        try:
-            text = 'Language is updated to %s\nSample event:\n\n%s' % (
-                normalized_locale,
-                format_event(user_config, sample_event)
-            )
-            message.reply_text(text)
-            return END
-        except locale.Error as e:
-            if old_lang:
-                user_config.set_language(old_lang)
-            logger.warning('Unsupported language "%s" for user %s', new_lang, user_id, exc_info=True)
-            message.reply_text('Unsupported language:\n%s\n\nTry again or /cancel' % e)
-            return SETTING
+        user_config.set_format(new_format)
+        text = 'Format is updated.\nSample event:\n\n%s' % (
+            format_event(user_config, sample_event)
+        )
+        message.reply_text(text)
+        return END
     except Exception as e:
-        logger.warning('Failed to update language to "%s" for user %s', new_lang, user_id, exc_info=True)
-        message.reply_text('Failed to update language:\n%s\n\nTry again or /cancel' % e)
+        logger.warning('Failed to update format for user %s', user_id, exc_info=True)
+        text = 'Failed to update format:\n%s\n\nTry again or /cancel' % e
+        message.reply_text(text)
+        return SETTING
 
 
 def cancel(bot, update, config):
@@ -108,6 +100,6 @@ def cancel(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Cancelled.\nCurrent language is %s' % user_config.language
+    text = 'Cancelled.\nCurrent format:\n\n%s' % user_config.format
     message.reply_text(text)
     return END

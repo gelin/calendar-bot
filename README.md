@@ -52,25 +52,30 @@ Takes one parameter:
 
 ### /format
 
-`/format [new format]` — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
+`/format` — get and set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
 
-Without arguments prints the current format of the calendar event.
+The command prints the current format of the calendar event and asks the new format to set.
 For example:
 
 ```
 Current format:
+
 {title}
 {date:%A, %d %B %Y}{time:, %H:%M %Z}
 {location}
 {description}
+
 Sample event:
+
 This is sample event
 Friday, 09 September 2016, 14:43 UTC
 It happens in the Milky Way
 The sample event is to demonstrate how the event can be formatted
+
+Type a new format string to set or /cancel
 ```
 
-With the text passed after the command name sets this text as the new event format.
+Enter the format message to set this text as the new event format.
 See below the details of the formatting.
  
 ### /lang 
