@@ -75,7 +75,7 @@ def set_advance(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    hours = message.text
+    hours = message.text.strip()
     try:
         hours = message.text.split()
         user_config.set_advance(hours)
@@ -86,7 +86,7 @@ def set_advance(bot, update, config):
         return END
     except Exception as e:
         logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
-        text = 'Failed to update advance hours:\n%s\nTry again or /cancel' % e
+        text = 'Failed to update advance hours:\n%s\n\nTry again or /cancel' % e
         message.reply_text(text)
         return SETTING
 
