@@ -90,6 +90,7 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('stats', get_stats_with_config,
                                           allow_edited=True))
 
+    dispatcher.add_handler(CommandHandler('cancel', cancel))
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
 
     dispatcher.add_error_handler(error)
@@ -275,6 +276,16 @@ def get_stats(bot, update, config):
     message = update.message or update.edited_message
     text = str(stats.get_stats(config))
     bot.sendMessage(chat_id=message.chat_id, text=text)
+
+
+def cancel(bot, update):
+    """
+    Handler for /cancel command. Prints error message.
+    :param bot: Bot instance
+    :param update: Update instance
+    :return: None
+    """
+    bot.sendMessage(chat_id=update.message.chat_id, text="Sorry, there's nothing to cancel.")
 
 
 def unknown(bot, update):
