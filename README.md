@@ -75,9 +75,9 @@ See below the details of the formatting.
  
 ### /lang 
 
-`/lang [language]` — get or set language to print the event, may affect the weekday / month name
+`/lang` — get and set language to print the event, may affect the weekday / month name
 
-Without arguments prints the current language.
+The command prints the current language and asks the new language to set.
 For example:
 
 ```
@@ -87,29 +87,32 @@ This is sample event
 Пятница, 23 Сентябрь 2016, 18:03 UTC
 It happens in the Milky Way
 The sample event is to demonstrate how the event can be formatted
+
+Type another language name to set or /cancel
 ```
 
-With the one argument sets the new language.
+Enter the language name to set the new language.
 The language can be two letter code ('ru') or the full name ('russian').
 Not all languages are supported by the bot.
 
 ### /advance
 
-`/advance [hours...]` — get or set calendar events advance, i.e. how many hours before the event to publish it
+`/advance` — get and set calendar events advance, i.e. how many hours before the event to publish it
 
 The bot broadcasts the event from the calendar to the channel some hours in advance before the event starts.
 How many hours in advance to notify can be configured by this command.
 It's possible to define multiple advance hours, in this case the same event will be notified multiple times.
 
-Without arguments prints the current advance hours.
+The command prints the current advance hours and asks new values to update.
 For example:
 
 ```
-Events are notified 48, 24 hours in advance
+Events are notified 48, 24 hours in advance.
+Type another numbers to change or /cancel
 ```
 
-With one or more integer arguments sets the new notification advance.
-Each argument means hours to advance. 
+Enter one or more space separated integer numbers to set the new notification advance.
+Each number means hours to advance.
 
 ## Event Formatting
 
