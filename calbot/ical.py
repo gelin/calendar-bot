@@ -83,7 +83,10 @@ class Calendar:
             self.description = str(vcalendar.get('X-WR-CALDESC'))
             for component in vcalendar.walk():
                 if component.name == 'VTIMEZONE':
-                    self.timezone = pytz.timezone(str(component.get('TZID')))
+                    try:
+                        self.timezone = pytz.timezone(str(component.get('TZID')))
+                    except Exception as e:
+                        logger.warning(e)
                 elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
                     yield event
