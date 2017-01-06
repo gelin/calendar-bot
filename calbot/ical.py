@@ -51,18 +51,26 @@ class Calendar:
         """timezone of the calendar, from ical file"""
         self.description = None
         """description of the calendar, from ical file"""
-        self.all_events = list(self.read_ical(self.url))
+
+        after = datetime.now(tz=pytz.UTC)
+        before = after + timedelta(hours=max(self.advance))
+
+        self.all_events = list(self.read_ical(self.url, after, before))
         """list of all calendar events, from ical file"""
-        future_events = filter_future_events(self.all_events, max(self.advance))
+
+        future_events = filter_future_events(self.all_events, after, before)
         unnotified_events = filter_notified_events(future_events, config)
         sorted_events = sort_events(unnotified_events)
+
         self.events = list(sorted_events)
         """list of calendar events which should be notified, filtered from ical file"""
 
-    def read_ical(self, url):
+    def read_ical(self, url, after, before):
         """
         Reads ical file from url.
         :param url: url to read
+        :param after: also generate repeating events after this datetime
+        :param before: also generate repeating events before this datetime
         :return: it's generator, yields each event read from ical
         """
         # TODO also filter past events to avoid reading of the whole calendar
@@ -74,7 +82,10 @@ class Calendar:
             self.description = str(vcalendar.get('X-WR-CALDESC'))
             for component in vcalendar.walk():
                 if component.name == 'VEVENT':
-                    yield Event.from_vevent(component, self.timezone, self.day_start)
+                    event = Event.from_vevent(component, self.timezone, self.day_start)
+                    yield event
+                    for repeat in event.repeat_between(after, before):
+                        yield repeat
 
 
 class Event:
@@ -211,17 +222,16 @@ class Event:
                     description=self.description or BlankFormat())
 
 
-def filter_future_events(events, max_advance):
+def filter_future_events(events, after, before):
     """
-    Filters only events which are after now and before the max_advance value
-    :param events: iterable of events
-    :param max_advance: future point, from now in hours, until lookup the events
+    Filters only events which are after and before the specified datetime
+    :param events:  iterable of events
+    :param after:   filter events after this datetime (exclusive)
+    :param before:  filter events before this datetime (inclusive)
     :return: it's generator, yields each filtered event
     """
-    now = datetime.now(tz=pytz.UTC)
-    end = now + timedelta(hours=max_advance)
     for event in events:
-        if now < event.notify_datetime <= end:
+        if after < event.notify_datetime <= before:
             yield event
 
 

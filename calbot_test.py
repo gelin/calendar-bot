@@ -58,29 +58,39 @@ def test_read_calendar():
     assert 'Тест' == calendar.name, calendar.name
     assert 'Just a test calendar' == calendar.description, calendar.description
     event = calendar.all_events[0]
-    # assert datetime.date(2017, 1, 4) == event.date, event.date    # the date varies
-    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Daily event' == event.title, event.title
-    event = calendar.all_events[1]
     assert datetime.date(2016, 6, 24) == event.date, event.date
     assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
     assert 'Событие по-русски' == event.title, event.title
-    event = calendar.all_events[2]
+    event = calendar.all_events[1]
     assert datetime.date(2016, 6, 23) == event.date, event.date
     assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
     assert 'Event title' == event.title, event.title
+    event = calendar.all_events[2]
+    assert datetime.date(2017, 1, 4) == event.date, event.date
+    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Daily event' == event.title, event.title
+    event = calendar.all_events[3]
+    assert event.date > datetime.date.today(), event.date   # this event repeats daily somewhere in future
+    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
+    assert 'Daily event' == event.title, event.title
 
 
 def test_filter_future_events():
     timezone = pytz.UTC
+    now = datetime.datetime.now(tz=timezone)
+
     component_past = _get_component()
-    component_past.add('dtstart', datetime.datetime.now(tz=timezone) - datetime.timedelta(hours=1))
+    component_past.add('dtstart', now - datetime.timedelta(hours=1))
     component_now = _get_component()
-    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
+    component_now.add('dtstart', now + datetime.timedelta(minutes=10))
     component_future = _get_component()
-    component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
-    events = [Event.from_vevent(component_past, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_future, timezone)]
-    result = list(filter_future_events(events, 1))
+    component_future.add('dtstart', now + datetime.timedelta(hours=2))
+    events = [Event.from_vevent(component_past, timezone),
+              Event.from_vevent(component_now, timezone),
+              Event.from_vevent(component_future, timezone)]
+
+    result = list(filter_future_events(events, now, now + datetime.timedelta(hours=1)))
+
     assert 1 == len(result), len(result)
     assert component_now.decoded('dtstart') == result[0].notify_datetime, result
 
