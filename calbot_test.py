@@ -257,23 +257,6 @@ def test_update_stats():
     shutil.rmtree('var/TEST')
 
 
-# def test_repeat_event():
-#     config = CalendarConfig.new(
-#         UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-#         '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-#     calendar = Calendar(config)
-#     event = calendar.all_events[0]
-#     assert 'FREQ=DAILY' == event.repeat_rule
-#     if datetime.datetime.now(tz=pytz.timezone('Asia/Omsk')).hour < 10:
-#         assert datetime.date.today() == event.date, event.date
-#         assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-#     else:
-#         assert (datetime.date.today() + datetime.timedelta(days=1)) == event.date, event.date
-#         assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-#     assert 'Daily event' == event.title, event.title
-#     assert event.notify_datetime.date() >= datetime.date.today(), event.notify_datetime
-
-
 def test_repeat_event_list_no_repeat():
     event = Event(
         id='TEST EVENT',
@@ -315,15 +298,14 @@ def test_repeat_fullday_event_list():
         title='REPEATING EVENT',
         date=datetime.date(2017, 1, 4),
         repeat_rule='FREQ=DAILY',
-        day_start=datetime.time(10, 0, 0, tzinfo=pytz.UTC)
     )
     repeats = event.repeat_between(
         datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
         datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
     assert len(repeats) == 2, repeats
     repeat = repeats[0]
-    assert repeat.id == 'TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id
+    assert repeat.id == 'TEST EVENT_2017-01-05T00:00:00', repeat.id
     assert repeat.date == datetime.date(2017, 1, 5), repeat.date
     repeat = repeats[1]
-    assert repeat.id == 'TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id
+    assert repeat.id == 'TEST EVENT_2017-01-06T00:00:00', repeat.id
     assert repeat.date == datetime.date(2017, 1, 6), repeat.date

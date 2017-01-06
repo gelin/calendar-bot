@@ -90,8 +90,12 @@ class Calendar:
                 elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
                     yield event
-                    for repeat in event.repeat_between(after, before):
-                        yield repeat
+                    try:
+                        for repeat in event.repeat_between(after, before):
+                            yield repeat
+                    except:
+                        logger.warning('Failed to repeat %s at %s %s',
+                            event.id, str(event.date), str(event.time), exc_info=1)
 
 
 class Event:
@@ -206,10 +210,13 @@ class Event:
 
         if self.time is not None:
             dtstart = datetime.combine(self.date, self.time)
+            rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
+            dates = rule.between(after, before, inc=True)
         else:
-            dtstart = datetime.combine(self.date, self.day_start)
-        rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
-        dates = rule.between(after, before, inc=True)
+            dtstart = self.date
+            rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
+            # TODO: It still fails for full-day events with RRULE:FREQ=MONTHLY;WKST=MO;UNTIL=20150513T235959Z;BYMONTHDAY=14
+            dates = rule.between(after.replace(tzinfo=None), before.replace(tzinfo=None), inc=True)
 
         dates = list(filter(lambda d: d != dtstart, dates))
         dates = list(filter(lambda d: d != after, dates))
