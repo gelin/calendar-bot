@@ -78,10 +78,13 @@ class Calendar:
         with urlopen(url) as f:
             vcalendar = icalendar.Calendar.from_ical(f.read())
             self.name = str(vcalendar.get('X-WR-CALNAME'))
-            self.timezone = pytz.timezone(str(vcalendar.get('X-WR-TIMEZONE')))
+            if vcalendar.get('X-WR-TIMEZONE') is not None:
+                self.timezone = pytz.timezone(str(vcalendar.get('X-WR-TIMEZONE')))
             self.description = str(vcalendar.get('X-WR-CALDESC'))
             for component in vcalendar.walk():
-                if component.name == 'VEVENT':
+                if component.name == 'VTIMEZONE':
+                    self.timezone = pytz.timezone(str(component.get('TZID')))
+                elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
                     yield event
                     for repeat in event.repeat_between(after, before):
