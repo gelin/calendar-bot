@@ -190,7 +190,7 @@ class Event:
         if self.time is not None:
             dtstart = datetime.combine(self.date, self.time)
         else:
-            dtstart = self.date
+            dtstart = datetime.combine(self.date, self.day_start)
         rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
         dates = rule.between(after, before, inc=True)
 
