@@ -30,3 +30,9 @@
 
 - name: install cron
   apt: name=cron state=present
+
+- name: install unattended-upgrades
+  apt: name=unattended-upgrades state=present
+
+- name: configure unattended-upgrades
+  copy: src=20auto-upgrades dest=/etc/apt/apt.conf.d
