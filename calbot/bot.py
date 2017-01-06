@@ -31,7 +31,10 @@ from calbot import stats
 from calbot.conf import CalendarConfig
 from calbot.formatting import normalize_locale, format_event
 from calbot.ical import Calendar, sample_event
+from calbot.commands import advance
 
+
+__all__ = ['run_bot']
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — add new iCal to be sent to a channel
@@ -42,7 +45,8 @@ GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /advance [hours...] — get or set calendar events advance, i.e. how many hours before the event to publish it
 '''
 
-__all__ = ['run_bot']
+# logging.basicConfig(level=logging.DEBUG,
+#                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger('bot')
 
@@ -85,17 +89,14 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('lang', get_set_lang_with_config,
                                           allow_edited=True, pass_args=True))
 
-    def get_set_advance_with_config(bot, update, args):
-        get_set_advance(bot, update, args, config)
-    dispatcher.add_handler(CommandHandler('advance', get_set_advance_with_config,
-                                          allow_edited=True, pass_args=True))
+    dispatcher.add_handler(advance.create_handler(config))
 
     def get_stats_with_config(bot, update):
         get_stats(bot, update, config)
     dispatcher.add_handler(CommandHandler('stats', get_stats_with_config,
                                           allow_edited=True))
 
-    dispatcher.add_handler(MessageHandler([Filters.command], unknown))
+    dispatcher.add_handler(MessageHandler(Filters.command, unknown))
 
     dispatcher.add_error_handler(error)
 
@@ -316,45 +317,6 @@ def get_set_lang(bot, update, args, config):
     else:
         new_lang = args[0]
         set_lang(new_lang)
-
-
-def get_set_advance(bot, update, args, config):
-    """
-    /advance command handler.
-    Prints the current advance hours or sets the new advance hours,
-    to display the event before it starts with these hours in advance.
-    :param bot: Bot instance
-    :param update: Update instance
-    :param args: Command arguments
-    :param config: Config instance
-    :return: None
-    """
-
-    def print_advance():
-        text = 'Events are notified %s hours in advance' % (
-            ', '.join(map(str, user_config.advance)),
-        )
-        bot.sendMessage(chat_id=user_id, text=text)
-
-    def set_advance(hours):
-        try:
-            user_config.set_advance(hours)
-            text = 'Advance hours are updated.\nEvents will be notified %s hours in advance.' % (
-                ', '.join(map(str, user_config.advance)),
-            )
-            bot.sendMessage(chat_id=user_id, text=text)
-        except Exception as e:
-            logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
-            bot.sendMessage(chat_id=user_id,
-                            text='Failed to update advance hours:\n%s' % e)
-
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-    if len(args) < 1:
-        print_advance()
-    else:
-        set_advance(args)
 
 
 def get_stats(bot, update, config):
