@@ -17,8 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
 
-
-import locale
 import logging
 
 from telegram.ext import CommandHandler
@@ -29,9 +27,9 @@ from telegram.ext import Updater
 
 from calbot import stats
 from calbot.conf import CalendarConfig
-from calbot.formatting import normalize_locale, format_event
+from calbot.formatting import format_event
 from calbot.ical import Calendar, sample_event
-from calbot.commands import advance
+from calbot.commands import lang, advance
 
 
 __all__ = ['run_bot']
@@ -41,8 +39,8 @@ GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /list — see all configured calendars
 /del id — remove calendar by id
 /format [new format] — get or set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
-/lang [language] — get or set language to print the event, may affect the week day name
-/advance [hours...] — get or set calendar events advance, i.e. how many hours before the event to publish it
+/lang — get and set language to print the event, may affect the week day name
+/advance — get and set calendar events advance, i.e. how many hours before the event to publish it
 '''
 
 # logging.basicConfig(level=logging.DEBUG,
@@ -84,11 +82,7 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('format', get_set_format_with_config,
                                           allow_edited=True))
 
-    def get_set_lang_with_config(bot, update, args):
-        get_set_lang(bot, update, args, config)
-    dispatcher.add_handler(CommandHandler('lang', get_set_lang_with_config,
-                                          allow_edited=True, pass_args=True))
-
+    dispatcher.add_handler(lang.create_handler(config))
     dispatcher.add_handler(advance.create_handler(config))
 
     def get_stats_with_config(bot, update):
@@ -267,56 +261,6 @@ def get_set_format(bot, update, config):
     else:
         new_format = parts[1]
         set_format(new_format)
-
-
-def get_set_lang(bot, update, args, config):
-    """
-    /lang command handler.
-    Prints the current language or sets the new language to display the calendar event.
-    :param bot: Bot instance
-    :param update: Update instance
-    :param args: Command arguments
-    :param config: Config instance
-    :return: None
-    """
-
-    def print_lang():
-        text = 'Current language: %s\nSample event:\n%s' % (
-            user_config.language,
-            format_event(user_config, sample_event)
-        )
-        bot.sendMessage(chat_id=user_id, text=text)
-
-    def set_lang(language):
-        old_language = user_config.language
-        try:
-            normalized_locale = normalize_locale(language)
-            user_config.set_language(normalized_locale)
-            try:
-                text = 'Language is updated to %s\nSample event:\n%s' % (
-                    normalized_locale,
-                    format_event(user_config, sample_event)
-                )
-                bot.sendMessage(chat_id=user_id, text=text)
-            except locale.Error as e:
-                if old_language:
-                    user_config.set_language(old_language)
-                logger.warning('Unsupported language "%s" for user %s', language, user_id, exc_info=True)
-                bot.sendMessage(chat_id=user_id,
-                                text='Unsupported language:\n%s' % e)
-        except Exception as e:
-            logger.warning('Failed to update language to "%s" for user %s', language, user_id, exc_info=True)
-            bot.sendMessage(chat_id=user_id,
-                            text='Failed to update language:\n%s' % e)
-
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-    if len(args) < 1:
-        print_lang()
-    else:
-        new_lang = args[0]
-        set_lang(new_lang)
 
 
 def get_stats(bot, update, config):

@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
 
+import locale
 import logging
 
 from telegram.ext import ConversationHandler
@@ -24,10 +25,13 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
+from calbot.formatting import normalize_locale, format_event
+from calbot.ical import sample_event
+
 
 __all__ = ['create_handler']
 
-logger = logging.getLogger('commands.advance')
+logger = logging.getLogger('commands.lang')
 
 SETTING = 0
 END = ConversationHandler.END
@@ -35,60 +39,68 @@ END = ConversationHandler.END
 
 def create_handler(config):
     """
-    Creates handler for /advance command.
+    Creates handler for /lang command.
     :return: ConversationHandler
     """
 
-    def get_advance_with_config(bot, update):
-        return get_advance(bot, update, config)
+    def get_lang_with_config(bot, update):
+        return get_lang(bot, update, config)
 
-    def set_advance_with_config(bot, update):
-        return set_advance(bot, update, config)
+    def set_lang_with_config(bot, update):
+        return set_lang(bot, update, config)
 
     def cancel_with_config(bot, update):
         return cancel(bot, update, config)
 
     return ConversationHandler(
-        entry_points=[CommandHandler('advance', get_advance_with_config)],
+        entry_points=[CommandHandler('lang', get_lang_with_config)],
         states={
-            SETTING: [MessageHandler(Filters.text, set_advance_with_config)],
+            SETTING: [MessageHandler(Filters.text, set_lang_with_config)],
         },
         fallbacks=[CommandHandler('cancel', cancel_with_config)],
         allow_reentry=True
     )
 
 
-def get_advance(bot, update, config):
+def get_lang(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Events are notified %s hours in advance.\nType another numbers to change or /cancel\n' % (
-        ', '.join(map(str, user_config.advance)),
+    text = 'Current language is %s\nSample event:\n\n%s\n\nType another language name to set or /cancel' % (
+        user_config.language,
+        format_event(user_config, sample_event)
     )
     message.reply_text(text)
     return SETTING
 
 
-def set_advance(bot, update, config):
+def set_lang(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    hours = message.text
+    new_lang = message.text
+    old_lang = user_config.language
     try:
-        hours = message.text.split()
-        user_config.set_advance(hours)
-        text = 'Advance hours are updated.\nEvents will be notified %s hours in advance.' % (
-            ', '.join(map(str, user_config.advance)),
-        )
-        message.reply_text(text)
-        return END
+        normalized_locale = normalize_locale(new_lang)
+        user_config.set_language(normalized_locale)
+        try:
+            text = 'Language is updated to %s\nSample event:\n\n%s' % (
+                normalized_locale,
+                format_event(user_config, sample_event)
+            )
+            message.reply_text(text)
+            return END
+        except locale.Error as e:
+            if old_lang:
+                user_config.set_language(old_lang)
+            logger.warning('Unsupported language "%s" for user %s', new_lang, user_id, exc_info=True)
+            message.reply_text('Unsupported language:\n%s\n\nTry again or /cancel' % e)
+            return SETTING
     except Exception as e:
-        logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
-        text = 'Failed to update advance hours:\n%s\nTry again or /cancel' % e
-        message.reply_text(text)
-        return SETTING
+        logger.warning('Failed to update language to "%s" for user %s', new_lang, user_id, exc_info=True)
+        message.reply_text('Failed to update language:\n%s\n\nTry again or /cancel' % e)
 
 
 def cancel(bot, update, config):
@@ -96,8 +108,6 @@ def cancel(bot, update, config):
     user_id = str(message.chat_id)
     user_config = config.load_user(user_id)
 
-    text = 'Cancelled.\nEvents will be notified %s hours in advance.' % (
-        ', '.join(map(str, user_config.advance)),
-    )
+    text = 'Cancelled.\nCurrent language is %s' % user_config.language
     message.reply_text(text)
     return END

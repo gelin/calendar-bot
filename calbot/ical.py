@@ -277,11 +277,13 @@ def sort_events(events):
 
 
 def _get_sample_event():
-    component = icalendar.cal.Component()
-    component.add('summary', 'This is sample event')
-    component.add('location', 'It happens in the Milky Way')
-    component.add('description', 'The sample event is to demonstrate how the event can be formatted')
-    component.add('dtstart', datetime.now(tz=pytz.UTC))
-    return Event.from_vevent(component, pytz.UTC)
+    now = datetime.now(tz=pytz.UTC)
+    return Event(
+        id='SAMPLE EVENT',
+        title='This is sample event',
+        location='It happens in Milky Way',
+        description='The sample event is to demonstrate how the event can be formatted',
+        date=now.date(),
+        time=now.time())
 
 sample_event = _get_sample_event()
