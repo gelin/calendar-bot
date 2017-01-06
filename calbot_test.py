@@ -297,3 +297,23 @@ def test_repeat_event_list():
     assert repeat.id == 'TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id
     assert repeat.date == datetime.date(2017, 1, 6), repeat.date
     assert repeat.time == datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time
+
+
+def test_repeat_fullday_event_list():
+    event = Event(
+        id='TEST EVENT',
+        title='REPEATING EVENT',
+        date=datetime.date(2017, 1, 4),
+        repeat_rule='FREQ=DAILY',
+        day_start=datetime.time(10, 0, 0, tzinfo=pytz.UTC)
+    )
+    repeats = event.repeat_between(
+        datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
+        datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
+    assert len(repeats) == 2, repeats
+    repeat = repeats[0]
+    assert repeat.id == 'TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id
+    assert repeat.date == datetime.date(2017, 1, 5), repeat.date
+    repeat = repeats[1]
+    assert repeat.id == 'TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id
+    assert repeat.date == datetime.date(2017, 1, 6), repeat.date
