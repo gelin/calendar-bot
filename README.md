@@ -35,20 +35,30 @@ Prints a table with calendar ID, calendar name and the broadcast channel with al
 For example:
 
 ```
-ID NAME CHANNEL
-1 My Google Calendar @mychannel
-2 Another Calendar @anotherchannel
+ID    NAME               CHANNEL
+/cal1 My Google Calendar @mychannel
+/cal2 Another Calendar   @anotherchannel
 ```
 
-### /del
+### /calN
 
-`/del id` — remove calendar by id
+`/cal<ID>` — see calendar details, delete it if necessary
 
-Deletes the calendar from the list of the configured calendars.
+Show details of the specified calendar from the list.
+Allows to delete it.
+For example:
 
-Takes one parameter:
+```
+Calendar 1 details
+Name: My Google Calendar
+URL: https://calendar.google.com/calendar/ical/XXXXXXXXXXXXXX/public/basic.ics
+Channel: @mychannel
+Verified: True
 
-* `id` — numeric ID of the calendar, the first column in the table printed by the `/list` command
+/delete it or /cancel
+```
+
+Then you can delete this calendar by selecting /delete command.
 
 ### /format
 
