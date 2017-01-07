@@ -26,10 +26,12 @@ from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
 from calbot import stats
-from calbot.conf import CalendarConfig
 from calbot.formatting import format_event
 from calbot.ical import Calendar
-from calbot.commands import format, lang, advance
+import calbot.commands.cal
+import calbot.commands.format
+import calbot.commands.lang
+import calbot.commands.advance
 
 
 __all__ = ['run_bot']
@@ -37,7 +39,7 @@ __all__ = ['run_bot']
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
 /add ical_url @channel — add new iCal to be sent to a channel
 /list — see all configured calendars
-/del id — remove calendar by id
+/calN — see calendar details, delete it
 /format — get and set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
 /lang — get and set language to print the event, may affect the week day name
 /advance — get and set calendar events advance, i.e. how many hours before the event to publish it
@@ -72,14 +74,10 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('list', list_calendars_from_config,
                                           allow_edited=True))
 
-    def delete_calendar_from_config(bot, update, args, job_queue):
-        delete_calendar(bot, update, args, job_queue, config)
-    dispatcher.add_handler(CommandHandler('del', delete_calendar_from_config,
-                                          allow_edited=True, pass_args=True, pass_job_queue=True))
-
-    dispatcher.add_handler(format.create_handler(config))
-    dispatcher.add_handler(lang.create_handler(config))
-    dispatcher.add_handler(advance.create_handler(config))
+    dispatcher.add_handler(calbot.commands.cal.create_handler(config))
+    dispatcher.add_handler(calbot.commands.format.create_handler(config))
+    dispatcher.add_handler(calbot.commands.lang.create_handler(config))
+    dispatcher.add_handler(calbot.commands.advance.create_handler(config))
 
     def get_stats_with_config(bot, update):
         get_stats(bot, update, config)
@@ -183,41 +181,8 @@ def list_calendars(bot, update, config):
     user_id = str(message.chat_id)
     text = 'ID\tNAME\tCHANNEL\n'
     for calendar in config.user_calendars(user_id):
-        text += '%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
+        text += '/cal%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
     bot.sendMessage(chat_id=user_id, text=text)
-
-
-def delete_calendar(bot, update, args, job_queue, config):
-    """
-    /del command handler.
-    Removes the calendar from the persisted config and from job queue by it's id.
-    :param bot: Bot instance
-    :param update: Update instance
-    :param args: command arguments: url and channel_id
-    :param job_queue: JobQueue instance to add calendar update job
-    :param config: Config instance to persist calendar
-    :return: None
-    """
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    if len(args) < 1:
-        bot.sendMessage(chat_id=user_id,
-                        text="Please provide the calendar id to /del command:\n/del calendar_id")
-        return
-
-    for calendar_id in args:
-        try:
-            config.delete_calendar(user_id, calendar_id)
-            for job in job_queue.jobs():
-                if (hasattr(job, 'context') and isinstance(job.context, CalendarConfig)
-                        and job.context.id == calendar_id):
-                    job.schedule_removal()
-            bot.sendMessage(chat_id=user_id,
-                            text="Calendar %s is deleted" % calendar_id)
-        except Exception as e:
-            logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
-            bot.sendMessage(chat_id=user_id,
-                            text='Failed to delete calendar %s:\n%s' % (calendar_id, e))
 
 
 def get_stats(bot, update, config):

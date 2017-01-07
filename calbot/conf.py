@@ -187,6 +187,22 @@ class Config:
                 calendar = CalendarConfig.load(user_config, calendar_parser, section)
                 yield calendar
 
+    def load_calendar(self, user_id, calendar_id):
+        """
+        Loads one calendar of the specified user.
+        :param user_id: ID of the user
+        :param calendar_id: ID of the calendar
+        :return: the CalendarConfig instance
+        """
+        user_config = self.load_user(user_id)
+        calendar_parser = CalendarsConfigFile(self.vardir, user_id).read_parser()
+
+        if not calendar_parser.has_section(calendar_id):
+            raise KeyError('Calendar %s not found' % calendar_id)
+
+        calendar = CalendarConfig.load(user_config, calendar_parser, calendar_id)
+        return calendar
+
     def add_calendar(self, user_id, url, channel_id):
         """
         Adds the calendar to the persisted list
