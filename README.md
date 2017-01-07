@@ -2,8 +2,8 @@
 
 It's the bot for [Telegram](https://telegram.org/).
 
-It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) file of a Google Calendars.
-And sends notifications to a [telegram channel](https://telegram.org/faq_channels) some hours in advance to the events in the calendar.
+It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) files of Google Calendar.
+And sends notifications to a [telegram channel](https://telegram.org/faq_channels) some hours in advance to the events start in the calendar.
 Use it to mirror calendar events to the channel and notify the subscribers.
 
 ## Quick Start
@@ -11,21 +11,34 @@ Use it to mirror calendar events to the channel and notify the subscribers.
 1. Start talk with [@icalbot](https://telegram.me/icalbot).
 2. Invite @icalbot to your channel and make it the [channel administrator](https://telegram.org/faq_channels#q-what-can-administrators-do) (to allow it to post messages to the channel).
 3. Find the URL of your iCalendar file ([ICAL link](https://support.google.com/calendar/answer/37083?hl=en#link)).
-4. Type `/add https://your_calendar.ics @your_channel` (setting your actual data) in the chat with the bot.
+4. Type `/add`, then, after prompts, enter `https://your_calendar.ics` and `@your_channel` (setting your actual data) in the chat with the bot.
 5. Wait for bot notifications in the chat and in the channel.
 
 ## Bot Commands
 
 ### /add
 
-`/add ical_url @channel` — add new iCal to be sent to a channel
+`/add` — add a new iCal to be sent to a channel
 
 Adds the new calendar to be processed by the bot and be broadcasted to the channel.
 
-Takes two parameters:
+You should enter two parameters after prompts, one by one:
 
-* `ical_url` — URL of the iCalendar file. Can look like `https://calendar.google.com/calendar/ical/many_many_characters/public/basic.ics`
-* `@channel` — name of the channel where to broadcast calendar events, starts from `@`
+* URL of the iCalendar file. Can look like `https://calendar.google.com/calendar/ical/many_many_characters/public/basic.ics`
+* Name of the channel where to broadcast calendar events, starts from `@`
+
+For example:
+
+```
+You're going to add a new calendar.
+Enter an URL of iCal file or /cancel
+```
+
+And then:
+
+```
+Enter a channel name or /cancel
+```
 
 ### /list
 
@@ -79,7 +92,7 @@ Sample event:
 
 This is sample event
 Friday, 09 September 2016, 14:43 UTC
-It happens in the Milky Way
+It happens in Milky Way
 The sample event is to demonstrate how the event can be formatted
 
 Type a new format string to set or /cancel
@@ -100,7 +113,7 @@ Current language: ru_RU.UTF-8
 Sample event:
 This is sample event
 Пятница, 23 Сентябрь 2016, 18:03 UTC
-It happens in the Milky Way
+It happens in Milky Way
 The sample event is to demonstrate how the event can be formatted
 
 Type another language name to set or /cancel

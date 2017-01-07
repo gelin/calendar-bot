@@ -26,20 +26,19 @@ from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
 from calbot import stats
-from calbot.formatting import format_event
-from calbot.ical import Calendar
-import calbot.commands.cal
-import calbot.commands.format
-import calbot.commands.lang
-import calbot.commands.advance
+from calbot.commands import add as add_command
+from calbot.commands import cal as cal_command
+from calbot.commands import format as format_command
+from calbot.commands import lang as lang_command
+from calbot.commands import advance as advance_command
+from calbot.processing import queue_calendar_update
 
 
 __all__ = ['run_bot']
 
 GREETING = '''Hello, I'm calendar bot, please give me some commands.
-/add ical_url @channel — add new iCal to be sent to a channel
+/add — add new iCal to be sent to a channel
 /list — see all configured calendars
-/calN — see calendar details, delete it
 /format — get and set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
 /lang — get and set language to print the event, may affect the week day name
 /advance — get and set calendar events advance, i.e. how many hours before the event to publish it
@@ -64,25 +63,20 @@ def run_bot(config):
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', start))
 
-    def add_calendar_to_config(bot, update, args, job_queue):
-        add_calendar(bot, update, args, job_queue, config)
-    dispatcher.add_handler(CommandHandler('add', add_calendar_to_config,
-                                          allow_edited=True, pass_args=True, pass_job_queue=True))
+    dispatcher.add_handler(add_command.create_handler(config))
 
     def list_calendars_from_config(bot, update):
         list_calendars(bot, update, config)
-    dispatcher.add_handler(CommandHandler('list', list_calendars_from_config,
-                                          allow_edited=True))
+    dispatcher.add_handler(CommandHandler('list', list_calendars_from_config))
 
-    dispatcher.add_handler(calbot.commands.cal.create_handler(config))
-    dispatcher.add_handler(calbot.commands.format.create_handler(config))
-    dispatcher.add_handler(calbot.commands.lang.create_handler(config))
-    dispatcher.add_handler(calbot.commands.advance.create_handler(config))
+    dispatcher.add_handler(cal_command.create_handler(config))
+    dispatcher.add_handler(format_command.create_handler(config))
+    dispatcher.add_handler(lang_command.create_handler(config))
+    dispatcher.add_handler(advance_command.create_handler(config))
 
     def get_stats_with_config(bot, update):
         get_stats(bot, update, config)
-    dispatcher.add_handler(CommandHandler('stats', get_stats_with_config,
-                                          allow_edited=True))
+    dispatcher.add_handler(CommandHandler('stats', get_stats_with_config))
 
     dispatcher.add_handler(CommandHandler('cancel', cancel))
     dispatcher.add_handler(MessageHandler(Filters.command, unknown))
@@ -119,18 +113,6 @@ def run_bot(config):
     updater.idle()
 
 
-def queue_calendar_update(job_queue, calendar, start_delay=0):
-    """
-    Adds the configured calendar to queue for processing
-    :param job_queue: bot's job queue
-    :param calendar: CalendarConfig instance
-    :param start_delay: delay start of immediate calendar processing for specified number of seconds
-    :return: None
-    """
-    job = Job(update_calendar, calendar.interval, repeat=True, context=calendar)
-    job_queue.put(job, next_t=start_delay)
-
-
 def start(bot, update):
     """
     /start or /help command handler. Prints greeting message.
@@ -142,33 +124,6 @@ def start(bot, update):
     bot.sendMessage(chat_id=update.message.chat_id, text=GREETING)
 
 
-def add_calendar(bot, update, args, job_queue, config):
-    """
-    /add command handler.
-    Adds url and channel_id of the new calendar to config and to the queue to be immediately processed.
-    :param bot: Bot instance
-    :param update: Update instance
-    :param args: command arguments: url and channel_id
-    :param job_queue: JobQueue instance to add calendar update job
-    :param config: Config instance to persist calendar
-    :return: None
-    """
-    message = update.message or update.edited_message
-    user_id = str(message.chat_id)
-    if len(args) < 2:
-        bot.sendMessage(chat_id=user_id,
-                        text="Please provide two arguments to /add command:\n/add ical_url @channel")
-        return
-
-    url = args[0]
-    channel_id = args[1]
-    calendar = config.add_calendar(user_id, url, channel_id)
-    queue_calendar_update(job_queue, calendar)
-
-    bot.sendMessage(chat_id=user_id,
-                    text="Calendar %s is queued for verification" % url)
-
-
 def list_calendars(bot, update, config):
     """
     /list command handler. Prints the list of all calendars configured for the user.
@@ -177,7 +132,7 @@ def list_calendars(bot, update, config):
     :param config: Config instance to read list of user's calendars
     :return: None
     """
-    message = update.message or update.edited_message
+    message = update.message
     user_id = str(message.chat_id)
     text = 'ID\tNAME\tCHANNEL\n'
     for calendar in config.user_calendars(user_id):
@@ -194,7 +149,7 @@ def get_stats(bot, update, config):
     :param config: Config instance
     :return: None
     """
-    message = update.message or update.edited_message
+    message = update.message
     text = str(stats.get_stats(config))
     bot.sendMessage(chat_id=message.chat_id, text=text)
 
@@ -230,35 +185,6 @@ def error(bot, update, error):
     logger.warning('Update "%s" caused error "%s"' % (update, error))
 
 
-def update_calendar(bot, job):
-    """
-    Job queue callback to update data from the calendar.
-    Reads ical file and notifies events if necessary.
-    After the first successful read the calendar is marked as validated.
-    :param bot: Bot instance
-    :param job: it's context has CalendarConfig instance to persist and update events notification status
-    :return: None
-    """
-    config = job.context
-    try:
-        calendar = Calendar(config)
-        for event in calendar.events:
-            send_event(bot, config, event)
-            config.event_notified(event)
-        config.save_events()
-        if not config.verified:
-            bot.sendMessage(chat_id=config.channel_id,
-                            text='Events from %s will be notified here' % calendar.name)
-            config.save_calendar(calendar)
-            bot.sendMessage(chat_id=config.user_id,
-                            text='Added:\n%s\t%s\t%s' % (config.id, config.name, config.channel_id))
-    except Exception as e:
-        logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
-        if not config.verified:
-            bot.sendMessage(chat_id=config.user_id,
-                            text='Failed to process calendar %s:\n%s' % (config.id, e))
-
-
 def update_stats(bot, job):
     """
     Job queue callback to update statistics.
@@ -268,15 +194,3 @@ def update_stats(bot, job):
     """
     config = job.context
     stats.update_stats(config)
-
-
-def send_event(bot, config, event):
-    """
-    Sends the event notification to the channel
-    :param bot: Bot instance
-    :param config: CalendarConfig instance
-    :param event: Event instance, read from ical
-    :return: None
-    """
-    logger.info('Sending event %s "%s" to %s', event.id, event.title, config.channel_id)
-    bot.sendMessage(chat_id=config.channel_id, text=format_event(config, event))
