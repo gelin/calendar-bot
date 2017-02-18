@@ -23,6 +23,9 @@ import logging
 import os
 import sys
 
+from raven.handlers.logging import SentryHandler
+from raven.conf import setup_logging
+
 from calbot.bot import run_bot
 from calbot.conf import Config
 
@@ -38,4 +41,5 @@ def main():
 
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+    setup_logging(SentryHandler(level=logging.WARNING))
     main()

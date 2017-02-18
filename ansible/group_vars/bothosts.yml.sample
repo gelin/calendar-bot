@@ -10,6 +10,8 @@ bot_service_description: 'Telegram bot'
 
 bot_bootstrap_retries: -1
 
+sentry_dsn: 'put your dns here'
+
 letsencrypt_cert_domains:
   - "{{ bot.domain }}"
 letsencrypt_email: "webmaster@example.com"

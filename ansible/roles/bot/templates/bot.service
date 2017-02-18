@@ -6,6 +6,7 @@ Type=simple
 ExecStart=/usr/bin/python3 {{ bot_basedir }}/calbot.py {{ bot_basedir }}/{{ bot_service_name }}.cfg
 WorkingDirectory={{ bot_basedir }}
 User={{ bot_user }}
+Environment=SENTRY_DSN={{ sentry_dsn }}
 
 [Install]
 WantedBy=multi-user.target
