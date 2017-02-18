@@ -38,4 +38,14 @@
   template:
     src: bot.service
     dest: '/etc/systemd/system/{{ bot_service_name }}.service'
-  notify: update systemd
+  notify: reload systemd
+
+- name: enable service
+  service:
+    name: '{{ bot_service_name }}'
+    enabled: yes
+
+- name: start service
+  service:
+    name: '{{ bot_service_name }}'
+    state: started

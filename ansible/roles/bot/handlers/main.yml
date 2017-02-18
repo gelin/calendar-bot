@@ -1,8 +1,7 @@
 ---
-- name: update systemd
-  service:
-    name: '{{ bot_service_name }}'
-    enabled: yes
+- name: reload systemd
+  command: systemctl daemon-reload
+  notify: restart bot
 
 - name: restart bot
   service:
