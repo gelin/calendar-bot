@@ -49,6 +49,8 @@ class CalendarConfig <<Persist>> {
     name
     notify_channel_id
     verified
+    last_process_at
+    last_process_error
 }
 
 Calendar *- CalendarConfig
@@ -92,8 +94,7 @@ var/
 from configparser import ConfigParser
 import logging
 import os
-from datetime import time
-
+from datetime import time, datetime
 
 __all__ = ['Config']
 
@@ -384,6 +385,10 @@ class CalendarConfig:
         """When the day starts if the event has no specified time"""
         self.events = {}
         """Dictionary of known configured events"""
+        self.last_process_at = kwargs.get('last_process_at')
+        """Moment when the calendar was processed last time"""
+        self.last_process_error = kwargs.get('last_process_error')
+        """Error message if last processing failed with an error"""
 
     @classmethod
     def new(cls, user_config, cal_id, url, channel_id):
@@ -419,7 +424,7 @@ class CalendarConfig:
         :return: CalendarConfig instance
         """
         section = cal_id
-        verified = config_parser.getboolean(section, 'verified')
+        verified = config_parser.getboolean(section, 'verified', fallback=False)
         return cls(
             vardir=user_config.vardir,
             interval=user_config.interval,
@@ -432,6 +437,8 @@ class CalendarConfig:
             name=config_parser.get(section, 'name', fallback=('Unknown' if verified else 'Unverified')),
             channel_id=config_parser.get(section, 'channel_id'),
             verified=verified,
+            last_process_at=config_parser.get(section, 'last_process_at', fallback=None),
+            last_process_error=config_parser.get(section, 'last_process_error', fallback=None),
             )
 
     def load_events(self):
@@ -469,6 +476,18 @@ class CalendarConfig:
         config_event = self.event(event.id)
         config_event.last_notified = event.notified_for_advance
 
+    def _create_section(self, config_parser):
+        if not config_parser.has_section(self.id):
+            config_parser.add_section(self.id)
+            config_parser.set(self.id, 'url', self.url)
+            config_parser.set(self.id, 'channel_id', self.channel_id)
+
+    def _update_last_process(self, config_parser, error=None):
+        self.last_process_at = datetime.utcnow().isoformat()
+        config_parser.set(self.id, 'last_process_at', self.last_process_at)
+        self.last_process_error = error
+        config_parser.set(self.id, 'last_process_error', str(self.last_process_error))
+
     def save_calendar(self, calendar):
         """
         Saves the calendar as verified and persisted
@@ -478,15 +497,14 @@ class CalendarConfig:
         config_file = CalendarsConfigFile(self.vardir, self.user_id)
         config_parser = config_file.read_parser()
 
-        if not config_parser.has_section(self.id):
-            config_parser.add_section(self.id)
-            config_parser.set(self.id, 'url', self.url)
-            config_parser.set(self.id, 'channel_id', self.channel_id)
+        self._create_section(config_parser)
 
         self.verified = True
         config_parser.set(self.id, 'verified', 'true')
         self.name = calendar.name
         config_parser.set(self.id, 'name', calendar.name)
+
+        self._update_last_process(config_parser)
 
         config_file.write(config_parser)
 
@@ -496,13 +514,22 @@ class CalendarConfig:
         :return: None
         """
         config_file = EventsConfigFile(self.vardir, self.user_id, self.id)
-        config = ConfigParser(interpolation=None)
+        config_parser = ConfigParser(interpolation=None)
 
         for event in self.events.values():
-            config.add_section(event.id)
-            config.set(event.id, 'last_notified', str(event.last_notified))
+            config_parser.add_section(event.id)
+            config_parser.set(event.id, 'last_notified', str(event.last_notified))
 
-        config_file.write(config)
+        config_file.write(config_parser)
+
+        self.save_error(None)
+
+    def save_error(self, exception):
+        config_file = CalendarsConfigFile(self.vardir, self.user_id)
+        config_parser = config_file.read_parser()
+        self._create_section(config_parser)
+        self._update_last_process(config_parser, exception)
+        config_file.write(config_parser)
 
 
 class EventConfig:
