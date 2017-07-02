@@ -72,6 +72,7 @@ Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
         if not config.verified:
             bot.sendMessage(chat_id=config.user_id,
                             text='Failed to process calendar %s:\n%s' % (config.id, e))
+        config.save_error(e)
 
 
 def send_event(bot, config, event):

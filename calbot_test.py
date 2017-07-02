@@ -21,9 +21,9 @@
 import datetime
 import os
 import unittest
-
 import pytz
 import shutil
+from dateutil.parser import parse
 
 from icalendar.cal import Component
 
@@ -294,3 +294,18 @@ class CalbotTestCase(unittest.TestCase):
         repeat = repeats[1]
         self.assertEqual('TEST EVENT_2017-01-06T00:00:00', repeat.id)
         self.assertEqual(datetime.date(2017, 1, 6), repeat.date)
+
+    def test_calendar_save_error(self):
+        calendar_config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+        now = datetime.datetime.utcnow()
+        calendar_config.save_error(Exception('TEST ERROR'))
+        config_file = CalendarsConfigFile('var', 'TEST')
+        calendar_config = CalendarConfig.load(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            config_file.read_parser(),
+            '1')
+        self.assertTrue(parse(calendar_config.last_process_at) > now)
+        self.assertEqual('TEST ERROR', calendar_config.last_process_error)
+        shutil.rmtree('var/TEST')
