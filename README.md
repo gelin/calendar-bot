@@ -169,7 +169,8 @@ Event properties:
     * `%U` — week number of the year (Sunday as the first day of the week)
     * `%W` — week number of the year (Monday as the first day of the week)
     * `%x` — whole date representation (depends on language)
-* `time` — hour, minute of the event start, you may define additional format parameters in braces, for example: `{time:%H:%M %Z}`.  
+
+* `time` — hour, minute of the event start, you may define additional format parameters in braces, for example: `{time:%H:%M %Z}`.
     Possible 'percent' parameters:
     
     * `%H` — hour (24-hour clock) as a zero-padded decimal number
@@ -180,5 +181,6 @@ Event properties:
     * `%z` — UTC offset in the form +HHMM or -HHMM
     * `%Z` — time zone name
     * `%X` — whole time representation (depends on language)
+
 * `location` — event location, as string, use `{location}` in format string.
 * `description` — event description, can be multi-line, use `{description}` in format string.

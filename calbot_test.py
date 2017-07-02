@@ -20,6 +20,7 @@
 
 import datetime
 import os
+import unittest
 
 import pytz
 import shutil
@@ -40,272 +41,256 @@ def _get_component():
     return component
 
 
-def test_format_event():
-    component = _get_component()
-    component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
-    event = Event.from_vevent(component, pytz.UTC)
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    result = format_event(user_config, event)
-    assert 'summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription' == result, result
+class CalbotTestCase(unittest.TestCase):
 
+    def test_format_event(self):
+        component = _get_component()
+        component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
+        event = Event.from_vevent(component, pytz.UTC)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        result = format_event(user_config, event)
+        self.assertEqual('summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription', result)
 
-def test_read_calendar():
-    config = CalendarConfig.new(
-        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    calendar = Calendar(config)
-    assert pytz.timezone('Asia/Omsk') == calendar.timezone, calendar.timezone
-    assert 'Тест' == calendar.name, calendar.name
-    assert 'Just a test calendar' == calendar.description, calendar.description
-    event = calendar.all_events[0]
-    assert datetime.date(2016, 6, 24) == event.date, event.date
-    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Событие по-русски' == event.title, event.title
-    event = calendar.all_events[1]
-    assert datetime.date(2016, 6, 23) == event.date, event.date
-    assert datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Event title' == event.title, event.title
-    event = calendar.all_events[2]
-    assert datetime.date(2017, 1, 4) == event.date, event.date
-    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Daily event' == event.title, event.title
-    event = calendar.all_events[3]
-    assert event.date > datetime.date.today(), event.date   # this event repeats daily somewhere in future
-    assert datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')) == event.time, event.time
-    assert 'Daily event' == event.title, event.title
+    def test_read_calendar(self):
+        config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(config)
+        self.assertEqual(pytz.timezone('Asia/Omsk'), calendar.timezone)
+        self.assertEqual('Тест', calendar.name)
+        self.assertEqual('Just a test calendar', calendar.description)
+        event = calendar.all_events[0]
+        self.assertEqual(datetime.date(2016, 6, 24), event.date)
+        self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        self.assertEqual('Событие по-русски', event.title)
+        event = calendar.all_events[1]
+        self.assertEqual(datetime.date(2016, 6, 23), event.date)
+        self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        self.assertEqual('Event title', event.title)
+        event = calendar.all_events[2]
+        self.assertEqual(datetime.date(2017, 1, 4), event.date)
+        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        self.assertEqual('Daily event', event.title)
+        event = calendar.all_events[3]
+        self.assertTrue(event.date > datetime.date.today(), event.date)   # this event repeats daily somewhere in future
+        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        self.assertEqual('Daily event', event.title)
 
+    def test_filter_future_events(self):
+        timezone = pytz.UTC
+        now = datetime.datetime.now(tz=timezone)
 
-def test_filter_future_events():
-    timezone = pytz.UTC
-    now = datetime.datetime.now(tz=timezone)
+        component_past = _get_component()
+        component_past.add('dtstart', now - datetime.timedelta(hours=1))
+        component_now = _get_component()
+        component_now.add('dtstart', now + datetime.timedelta(minutes=10))
+        component_future = _get_component()
+        component_future.add('dtstart', now + datetime.timedelta(hours=2))
+        events = [Event.from_vevent(component_past, timezone),
+                  Event.from_vevent(component_now, timezone),
+                  Event.from_vevent(component_future, timezone)]
 
-    component_past = _get_component()
-    component_past.add('dtstart', now - datetime.timedelta(hours=1))
-    component_now = _get_component()
-    component_now.add('dtstart', now + datetime.timedelta(minutes=10))
-    component_future = _get_component()
-    component_future.add('dtstart', now + datetime.timedelta(hours=2))
-    events = [Event.from_vevent(component_past, timezone),
-              Event.from_vevent(component_now, timezone),
-              Event.from_vevent(component_future, timezone)]
+        result = list(filter_future_events(events, now, now + datetime.timedelta(hours=1)))
 
-    result = list(filter_future_events(events, now, now + datetime.timedelta(hours=1)))
+        self.assertEqual(1, len(result))
+        self.assertEqual(component_now.decoded('dtstart'), result[0].notify_datetime)
 
-    assert 1 == len(result), len(result)
-    assert component_now.decoded('dtstart') == result[0].notify_datetime, result
+    def test_filter_notified_events(self):
+        timezone = pytz.UTC
+        component_now = _get_component()
+        component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=5))
+        component_future24 = _get_component()
+        component_future24.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=24, minutes=-5))
+        component_future48 = _get_component()
+        component_future48.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=48, minutes=-5))
 
+        class TestCalendarConfig:
 
-def test_filter_notified_events():
-    timezone = pytz.UTC
-    component_now = _get_component()
-    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=5))
-    component_future24 = _get_component()
-    component_future24.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=24, minutes=-5))
-    component_future48 = _get_component()
-    component_future48.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=48, minutes=-5))
+            def __init__(self):
+                self.advance = [24, 48]
 
-    class TestCalendarConfig:
+            def event(self, id):
+                return TestEventConfig()
 
-        def __init__(self):
-            self.advance = [24, 48]
+        class TestEventConfig:
 
-        def event(self, id):
-            return TestEventConfig()
+            def __init__(self):
+                self.id = 1
+                self.last_notified = 48
 
-    class TestEventConfig:
+        events = [Event.from_vevent(component_now, timezone), Event.from_vevent(component_future24, timezone), Event.from_vevent(component_future48, timezone)]
+        config = TestCalendarConfig()
+        result = list(filter_notified_events(events, config))
+        self.assertEqual(2, len(result))
+        self.assertEqual(component_now.decoded('dtstart'), result[0].notify_datetime)
+        self.assertEqual(component_future24.decoded('dtstart'), result[1].notify_datetime)
 
-        def __init__(self):
-            self.id = 1
-            self.last_notified = 48
+    def test_date_only_event(self):
+        timezone = pytz.UTC
+        component = _get_component()
+        component.add('dtstart', datetime.date.today())
+        event = Event.from_vevent(component, timezone, datetime.time(10, 0))
+        self.assertTrue(isinstance(event.date, datetime.date))
+        self.assertIsNone(event.time)
+        self.assertEqual(10, event.notify_datetime.hour)
+        self.assertEqual(0, event.notify_datetime.minute)
+        self.assertEqual(pytz.UTC, event.notify_datetime.tzinfo)
 
-    events = [Event.from_vevent(component_now, timezone), Event.from_vevent(component_future24, timezone), Event.from_vevent(component_future48, timezone)]
-    config = TestCalendarConfig()
-    result = list(filter_notified_events(events, config))
-    assert 2 == len(result), result
-    assert component_now.decoded('dtstart') == result[0].notify_datetime, result
-    assert component_future24.decoded('dtstart') == result[1].notify_datetime, result
+    def test_default_user_confg(self):
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        self.assertEqual('var', user_config.vardir)
+        self.assertEqual(3600, user_config.interval)
+        self.assertEqual('TEST', user_config.id)
+        self.assertEqual(DEFAULT_FORMAT, user_config.format)
+        self.assertIsNone(user_config.language)
+        self.assertEqual([48, 24], user_config.advance)
 
+    def test_default_calendar_config(self):
+        calendar_config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+        self.assertEqual([48, 24], calendar_config.advance)
 
-def test_date_only_event():
-    timezone = pytz.UTC
-    component = _get_component()
-    component.add('dtstart', datetime.date.today())
-    event = Event.from_vevent(component, timezone, datetime.time(10, 0))
-    assert isinstance(event.date, datetime.date), event.date.__class__.__name__
-    assert event.time is None, event.time
-    assert 10 == event.notify_datetime.hour, event.date
-    assert 0 == event.notify_datetime.minute, event.date
-    assert pytz.UTC == event.notify_datetime.tzinfo, event.date
+    def test_set_format(self):
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.set_format("TEST FORMAT")
+        self.assertEqual('TEST FORMAT', user_config.format)
+        config_file = UserConfigFile('var', 'TEST')
+        user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+        self.assertEqual('TEST FORMAT', user_config.format)
+        shutil.rmtree('var/TEST')
 
+    def test_set_language(self):
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.set_language("TEST_LANGUAGE")
+        self.assertEqual('TEST_LANGUAGE', user_config.language)
+        config_file = UserConfigFile('var', 'TEST')
+        user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+        self.assertEqual('TEST_LANGUAGE', user_config.language)
+        shutil.rmtree('var/TEST')
 
-def test_default_user_confg():
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    assert user_config.vardir == 'var'
-    assert user_config.interval == 3600
-    assert user_config.id == 'TEST'
-    assert user_config.format == DEFAULT_FORMAT
-    assert user_config.language is None
-    assert user_config.advance == [48, 24]
+    def test_format_event_ru(self):
+        component = _get_component()
+        component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
+        event = Event.from_vevent(component, pytz.UTC)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual('summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription', result)
 
+    def test_normalize_locale(self):
+        result = normalize_locale('it')
+        self.assertEqual('it_IT.UTF-8', result)
 
-def test_default_calendar_config():
-    calendar_config = CalendarConfig.new(
-        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    assert calendar_config.advance == [48, 24]
+    def test_set_advance(self):
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.set_advance(['1', '3', '2', '3'])
+        self.assertEqual([3, 2, 1], user_config.advance)
+        config_file = UserConfigFile('var', 'TEST')
+        user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
+        self.assertEqual([3, 2, 1], user_config.advance)
+        shutil.rmtree('var/TEST')
 
+    def test_sort_events(self):
+        timezone = pytz.UTC
+        component_past = _get_component()
+        component_past.add('dtstart', datetime.datetime.now(tz=timezone) - datetime.timedelta(hours=1))
+        component_now = _get_component()
+        component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
+        component_future = _get_component()
+        component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
+        events = [Event.from_vevent(component_future, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_past, timezone)]
+        result = list(sort_events(events))
+        self.assertEqual(events[2], result[0])
+        self.assertEqual(events[1], result[1])
+        self.assertEqual(events[0], result[2])
 
-def test_set_format():
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    user_config.set_format("TEST FORMAT")
-    assert user_config.format == "TEST FORMAT", user_config.format
-    config_file = UserConfigFile('var', 'TEST')
-    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
-    assert user_config.format == "TEST FORMAT", user_config.format
-    shutil.rmtree('var/TEST')
+    def test_format_date_only_event(self):
+        timezone = pytz.UTC
+        component = _get_component()
+        component.add('dtstart', datetime.date(2016, 6, 23))
+        event = Event.from_vevent(component, timezone, datetime.time(10, 0))
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        result = format_event(user_config, event)
+        self.assertEqual('summary\nThursday, 23 June 2016\nlocation\ndescription', result)
 
+    def test_save_calendar(self):
+        calendar_config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(calendar_config)
+        calendar_config.save_calendar(calendar)
+        config_file = CalendarsConfigFile('var', 'TEST')
+        calendar_config = CalendarConfig.load(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            config_file.read_parser(),
+            '1')
+        self.assertEqual('Тест', calendar_config.name)
+        shutil.rmtree('var/TEST')
 
-def test_set_language():
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    user_config.set_language("TEST_LANGUAGE")
-    assert user_config.language == "TEST_LANGUAGE", user_config.language
-    config_file = UserConfigFile('var', 'TEST')
-    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
-    assert user_config.language == "TEST_LANGUAGE", user_config.language
-    shutil.rmtree('var/TEST')
+    def test_update_stats(self):
+        config = Config('calbot.cfg.sample')
+        update_stats(config)
+        stats1 = get_stats(config)
+        calendar_config = CalendarConfig.new(
+            UserConfig.new(config, 'TEST'),
+            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(calendar_config)
+        calendar_config.save_calendar(calendar)
+        update_stats(config)
+        stats2 = get_stats(config)
+        self.assertEqual(1, (stats2.users - stats1.users))
+        self.assertEqual(1, (stats2.calendars - stats1.calendars))
+        self.assertEqual(stats2.events, stats1.events)
+        shutil.rmtree('var/TEST')
 
+    def test_repeat_event_list_no_repeat(self):
+        event = Event(
+            id='TEST EVENT',
+            title='REPEATING EVENT',
+            date=datetime.date(2017, 1, 4),
+            time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
+        )
+        repeats = event.repeat_between(
+            datetime.datetime(2017, 1, 4, 10, 0, 0, tzinfo=pytz.UTC),
+            datetime.datetime(2017, 1, 8, 10, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual([], repeats)
 
-def test_format_event_ru():
-    component = _get_component()
-    component.add('dtstart', datetime.datetime(2016, 6, 23, 19, 50, 35, tzinfo=pytz.UTC))
-    event = Event.from_vevent(component, pytz.UTC)
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    user_config.language = 'ru_RU.UTF-8'
-    result = format_event(user_config, event)
-    assert 'summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription' == result, result
+    def test_repeat_event_list(self):
+        event = Event(
+            id='TEST EVENT',
+            title='REPEATING EVENT',
+            date=datetime.date(2017, 1, 4),
+            time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
+            repeat_rule='FREQ=DAILY'
+        )
+        repeats = event.repeat_between(
+            datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
+            datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(2, len(repeats))
+        repeat = repeats[0]
+        self.assertEqual('TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id)
+        self.assertEqual(datetime.date(2017, 1, 5), repeat.date)
+        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time)
+        repeat = repeats[1]
+        self.assertEqual('TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id)
+        self.assertEqual(datetime.date(2017, 1, 6), repeat.date)
+        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time)
 
-
-def test_normalize_locale():
-    result = normalize_locale('it')
-    assert 'it_IT.UTF-8' == result, result
-
-
-def test_set_advance():
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    user_config.set_advance(['1', '3', '2', '3'])
-    assert user_config.advance == [3, 2, 1], user_config.advance
-    config_file = UserConfigFile('var', 'TEST')
-    user_config = UserConfig.load(Config('calbot.cfg.sample'), 'TEST', config_file.read_parser())
-    assert user_config.advance == [3, 2, 1], user_config.advance
-    shutil.rmtree('var/TEST')
-
-
-def test_sort_events():
-    timezone = pytz.UTC
-    component_past = _get_component()
-    component_past.add('dtstart', datetime.datetime.now(tz=timezone) - datetime.timedelta(hours=1))
-    component_now = _get_component()
-    component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
-    component_future = _get_component()
-    component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
-    events = [Event.from_vevent(component_future, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_past, timezone)]
-    result = list(sort_events(events))
-    assert events[2] == result[0], result
-    assert events[1] == result[1], result
-    assert events[0] == result[2], result
-
-
-def test_format_date_only_event():
-    timezone = pytz.UTC
-    component = _get_component()
-    component.add('dtstart', datetime.date(2016, 6, 23))
-    event = Event.from_vevent(component, timezone, datetime.time(10, 0))
-    user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
-    result = format_event(user_config, event)
-    assert 'summary\nThursday, 23 June 2016\nlocation\ndescription' == result, result
-
-
-def test_save_calendar():
-    calendar_config = CalendarConfig.new(
-        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    calendar = Calendar(calendar_config)
-    calendar_config.save_calendar(calendar)
-    config_file = CalendarsConfigFile('var', 'TEST')
-    calendar_config = CalendarConfig.load(
-        UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-        config_file.read_parser(),
-        '1')
-    assert calendar_config.name == 'Тест', calendar_config.name
-    shutil.rmtree('var/TEST')
-
-
-def test_update_stats():
-    config = Config('calbot.cfg.sample')
-    update_stats(config)
-    stats1 = get_stats(config)
-    calendar_config = CalendarConfig.new(
-        UserConfig.new(config, 'TEST'),
-        '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
-    calendar = Calendar(calendar_config)
-    calendar_config.save_calendar(calendar)
-    update_stats(config)
-    stats2 = get_stats(config)
-    assert (stats2.users - stats1.users) == 1, '%i -> %i' % (stats1.users, stats2.users)
-    assert (stats2.calendars - stats1.calendars) == 1, '%i -> %i' % (stats1.calendars, stats2.calendars)
-    assert stats2.events == stats1.events, '%i -> %i' % (stats1.events, stats2.events)
-    shutil.rmtree('var/TEST')
-
-
-def test_repeat_event_list_no_repeat():
-    event = Event(
-        id='TEST EVENT',
-        title='REPEATING EVENT',
-        date=datetime.date(2017, 1, 4),
-        time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
-    )
-    repeats = event.repeat_between(
-        datetime.datetime(2017, 1, 4, 10, 0, 0, tzinfo=pytz.UTC),
-        datetime.datetime(2017, 1, 8, 10, 0, 0, tzinfo=pytz.UTC))
-    assert repeats == [], repeats
-
-
-def test_repeat_event_list():
-    event = Event(
-        id='TEST EVENT',
-        title='REPEATING EVENT',
-        date=datetime.date(2017, 1, 4),
-        time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
-        repeat_rule='FREQ=DAILY'
-    )
-    repeats = event.repeat_between(
-        datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
-        datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
-    assert len(repeats) == 2, repeats
-    repeat = repeats[0]
-    assert repeat.id == 'TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id
-    assert repeat.date == datetime.date(2017, 1, 5), repeat.date
-    assert repeat.time == datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time
-    repeat = repeats[1]
-    assert repeat.id == 'TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id
-    assert repeat.date == datetime.date(2017, 1, 6), repeat.date
-    assert repeat.time == datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time
-
-
-def test_repeat_fullday_event_list():
-    event = Event(
-        id='TEST EVENT',
-        title='REPEATING EVENT',
-        date=datetime.date(2017, 1, 4),
-        repeat_rule='FREQ=DAILY',
-    )
-    repeats = event.repeat_between(
-        datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
-        datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
-    assert len(repeats) == 2, repeats
-    repeat = repeats[0]
-    assert repeat.id == 'TEST EVENT_2017-01-05T00:00:00', repeat.id
-    assert repeat.date == datetime.date(2017, 1, 5), repeat.date
-    repeat = repeats[1]
-    assert repeat.id == 'TEST EVENT_2017-01-06T00:00:00', repeat.id
-    assert repeat.date == datetime.date(2017, 1, 6), repeat.date
+    def test_repeat_fullday_event_list(self):
+        event = Event(
+            id='TEST EVENT',
+            title='REPEATING EVENT',
+            date=datetime.date(2017, 1, 4),
+            repeat_rule='FREQ=DAILY',
+        )
+        repeats = event.repeat_between(
+            datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
+            datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
+        self.assertEqual(2, len(repeats))
+        repeat = repeats[0]
+        self.assertEqual('TEST EVENT_2017-01-05T00:00:00', repeat.id)
+        self.assertEqual(datetime.date(2017, 1, 5), repeat.date)
+        repeat = repeats[1]
+        self.assertEqual('TEST EVENT_2017-01-06T00:00:00', repeat.id)
+        self.assertEqual(datetime.date(2017, 1, 6), repeat.date)
