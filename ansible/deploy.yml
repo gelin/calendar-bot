@@ -1,3 +1,5 @@
+#!/usr/bin/env ansible-playbook
+
 ---
 - name: Copies bot files, restarts the bot
   hosts: bothosts
