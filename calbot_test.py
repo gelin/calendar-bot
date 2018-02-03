@@ -309,3 +309,24 @@ class CalbotTestCase(unittest.TestCase):
         self.assertTrue(parse(calendar_config.last_process_at) > now)
         self.assertEqual('TEST ERROR', calendar_config.last_process_error)
         shutil.rmtree('var/TEST')
+
+    def test_format_event_html(self):
+        component = Component()
+        component.add('summary', '<b>summary</b>')
+        component.add('location', '<i>location</i>')
+        component.add('description', '<b>description</b><br><br>&nbsp;<a href="link.html">link</a>')
+        component.add('dtstart', datetime.datetime(2018, 2, 3, 13, 3, 4, tzinfo=pytz.UTC))
+        event = Event.from_vevent(component, pytz.UTC)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual('summary\nСуббота, 03 Февраль 2018, 13:03 UTC\nlocation\ndescription\n\n link (link.html)', result)
+
+    def test_format_event_blanks(self):
+        component = Component()
+        component.add('dtstart', datetime.datetime(2018, 2, 3, 13, 3, 4, tzinfo=pytz.UTC))
+        event = Event.from_vevent(component, pytz.UTC)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual('None\nСуббота, 03 Февраль 2018, 13:03 UTC\nNone\nNone', result)
