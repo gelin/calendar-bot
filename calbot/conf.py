@@ -134,7 +134,7 @@ class Config:
         """Time to wait between polling updates from Telegram"""
         self.timeout = config.getfloat('polling', 'timeout', fallback=10.0)
         """Timeout in seconds for long polling"""
-        self.network_delay = config.getfloat('polling', 'timeout', fallback=5.0)
+        self.read_latency = config.getfloat('polling', 'read_latency', fallback=2.0)
         """Additional timeout in seconds to allow the response from Telegram servers."""
         self.webhook = config.getboolean('webhook', 'webhook', fallback=False)
         """use webhook or not"""
