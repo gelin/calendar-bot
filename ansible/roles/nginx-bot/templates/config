@@ -1,4 +1,5 @@
 server {
+
     listen [::]:443 ssl default_server;
 
     ssl_certificate /etc/letsencrypt/live/{{ bot_domain }}/fullchain.pem;

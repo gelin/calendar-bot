@@ -1,0 +1,6 @@
+---
+
+- name: install ntp
+  apt:
+    name: 'ntp'
+    state: present

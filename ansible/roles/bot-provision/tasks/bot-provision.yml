@@ -1,0 +1,28 @@
+---
+
+- name: create bot user
+  user:
+    name: '{{ bot_user }}'
+    system: yes
+
+- name: create bot dir
+  file:
+    path: '{{ bot_basedir }}'
+    state: directory
+    owner: '{{ bot_user }}'
+
+- name: install systemd service
+  template:
+    src: bot.service
+    dest: '/etc/systemd/system/{{ bot_service_name }}.service'
+  notify: reload systemd
+
+- name: enable service
+  service:
+    name: '{{ bot_service_name }}'
+    enabled: yes
+
+- name: start service
+  service:
+    name: '{{ bot_service_name }}'
+    state: started

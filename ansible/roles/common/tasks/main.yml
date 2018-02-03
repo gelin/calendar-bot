@@ -1,38 +1,36 @@
 ---
-- name: apt-get update
-  apt: update_cache=yes
 
-- name: install iptables-persistent
-  apt: name=iptables-persistent state=present
+- import_tasks: 'apt-update.yml'
+  tags:
+    - common
+    - common:apt
 
-- name: set up iptables rules
-  copy: src=iptables.rules.v4 dest=/etc/iptables/rules.v4
-  notify: restart iptables
+- import_tasks: 'iptables-config.yml'
+  tags:
+    - common
+    - common:iptables
 
-- name: set up ip6tables rules
-  copy: src=iptables.rules.v6 dest=/etc/iptables/rules.v6
-  notify: restart iptables
+- import_tasks: 'locales-config.yml'
+  tags:
+    - common
+    - common:locales
 
-- name: set timezone variables
-  copy: content="Asia/Omsk\n"
-        dest=/etc/timezone
-        owner=root
-        group=root
-        mode=0644
-        backup=yes
-  notify: update timezone
+- import_tasks: 'timezone-config.yml'
+  tags:
+    - common
+    - common:timezone
 
-- name: install ntp
-  apt: name=ntp state=present
+- import_tasks: 'ntp-install.yml'
+  tags:
+    - common
+    - common:ntp
 
-- name: configure locales
-  locale_gen: name=en_US.UTF-8 state=present
+- import_tasks: 'cron-install.yml'
+  tags:
+    - common
+    - common:cron
 
-- name: install cron
-  apt: name=cron state=present
-
-- name: install unattended-upgrades
-  apt: name=unattended-upgrades state=present
-
-- name: configure unattended-upgrades
-  copy: src=20auto-upgrades dest=/etc/apt/apt.conf.d
+- import_tasks: 'unattended-upgrades-install.yml'
+  tags:
+    - common
+    - common:upgrades

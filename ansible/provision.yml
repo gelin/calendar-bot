@@ -10,3 +10,5 @@
     - nginx
     - letsencrypt
     - nginx-bot
+    - bot-provision
+

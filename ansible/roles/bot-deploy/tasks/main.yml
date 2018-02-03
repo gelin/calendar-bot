@@ -1,0 +1,6 @@
+---
+
+- import_tasks: 'bot-deploy.yml'
+  tags:
+    - bot
+    - bot:deploy

@@ -1,7 +1,4 @@
 ---
-- name: reload systemd
-  command: systemctl daemon-reload
-  notify: restart bot
 
 - name: restart bot
   service:
