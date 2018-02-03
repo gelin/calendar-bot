@@ -1,0 +1,5 @@
+---
+bot_user: bot
+bot_basedir: /opt/bot
+bot_service_name: bot
+bot_service_description: 'Telegram bot'

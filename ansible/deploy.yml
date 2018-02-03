@@ -6,4 +6,4 @@
   remote_user: root
 
   roles:
-    - bot
+    - bot-deploy

@@ -1,0 +1,6 @@
+---
+
+- import_tasks: 'bot-provision'
+  tags:
+    - bot
+    - bot:provision

@@ -1,4 +1,5 @@
 ---
+
 - name: restart iptables
   service: name=netfilter-persistent state=restarted
 

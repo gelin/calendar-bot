@@ -1,4 +1,6 @@
 ---
-- name: Install nginx
-  apt: name=nginx state=present
-  notify: start nginx
+
+- import_tasks: 'nginx-install.yml'
+  tags:
+    - nginx
+    - nginx:install

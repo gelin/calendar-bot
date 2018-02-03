@@ -1,0 +1,11 @@
+---
+
+- name: set timezone variables
+  copy:
+    content: "Asia/Omsk\n"
+    dest: '/etc/timezone'
+    owner: 'root'
+    group: 'root'
+    mode: '0644'
+    backup: yes
+  notify: update timezone

@@ -1,14 +1,4 @@
 ---
-- name: create bot user
-  user:
-    name: '{{ bot_user }}'
-    system: yes
-
-- name: create bot dir
-  file:
-    path: '{{ bot_basedir }}'
-    state: directory
-    owner: '{{ bot_user }}'
 
 - name: copy bot files
   copy:
@@ -33,17 +23,6 @@
     src: bot.cfg
     dest: '{{ bot_basedir }}/{{ bot_service_name }}.cfg'
   notify: restart bot
-
-- name: install systemd service
-  template:
-    src: bot.service
-    dest: '/etc/systemd/system/{{ bot_service_name }}.service'
-  notify: reload systemd
-
-- name: enable service
-  service:
-    name: '{{ bot_service_name }}'
-    enabled: yes
 
 - name: start service
   service:

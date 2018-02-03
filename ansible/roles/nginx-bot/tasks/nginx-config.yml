@@ -1,0 +1,19 @@
+---
+
+- name: generate DH params
+  command: 'openssl dhparam -out /etc/nginx/dhparams.pem 2048'
+  args:
+    creates: '/etc/nginx/dhparams.pem'
+
+- name: copy nginx configuration
+  template:
+    src: 'config'
+    dest: '/etc/nginx/sites-available/{{ bot_site_config }}'
+  notify: restart nginx
+
+- name: enable nginx configuration
+  file:
+    src: '/etc/nginx/sites-available/{{ bot_site_config }}'
+    dest: '/etc/nginx/sites-enabled/{{ bot_site_config }}'
+    state: link
+  notify: restart nginx
