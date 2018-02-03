@@ -518,7 +518,8 @@ class CalendarConfig:
 
         for event in self.events.values():
             config_parser.add_section(event.id)
-            config_parser.set(event.id, 'last_notified', str(event.last_notified))
+            if type(event.last_notified) is int:
+                config_parser.set(event.id, 'last_notified', str(event.last_notified))
 
         config_file.write(config_parser)
 
