@@ -21,7 +21,6 @@ import logging
 
 from telegram.ext import CommandHandler
 from telegram.ext import Filters
-from telegram.ext import Job
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
 
@@ -97,7 +96,7 @@ def run_bot(config):
         updater.start_polling(clean=False,
                               poll_interval=config.poll_interval,
                               timeout=config.timeout,
-                              network_delay=config.network_delay,
+                              read_latency=config.read_latency,
                               bootstrap_retries=config.bootstrap_retries,
                               )
         logger.info('Started polling')
@@ -107,8 +106,7 @@ def run_bot(config):
         queue_calendar_update(updater.job_queue, calendar, start_delay)
         start_delay += 1
 
-    stats_job = Job(update_stats, config.stats_interval, repeat=True, context=config)
-    updater.job_queue.put(stats_job, next_t=0)
+    updater.job_queue.run_repeating(update_stats, config.stats_interval, first=0, context=config)
 
     updater.idle()
 

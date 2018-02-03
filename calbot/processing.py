@@ -19,8 +19,6 @@
 
 import logging
 
-from telegram.ext import Job
-
 from calbot.formatting import format_event
 from calbot.ical import Calendar
 
@@ -38,8 +36,7 @@ def queue_calendar_update(job_queue, calendar, start_delay=0):
     :param start_delay: delay start of immediate calendar processing for specified number of seconds
     :return: None
     """
-    job = Job(update_calendar, calendar.interval, repeat=True, context=calendar)
-    job_queue.put(job, next_t=start_delay)
+    job_queue.run_repeating(update_calendar, calendar.interval, first=start_delay, context=calendar)
 
 
 def update_calendar(bot, job):
