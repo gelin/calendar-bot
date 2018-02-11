@@ -334,7 +334,9 @@ class CalbotTestCase(unittest.TestCase):
     def test_strip_tags_href(self):
         result = strip_tags('''<a href="http://example.com">example</a>
 <a href="http://example.com">http://example.com</a>
-<a href="http://example.com">example.com</a>''')
+<a href="http://example.com">example.com</a>
+<a href="https://vk.com/away.php?to=http:%2F%2Fmlomsk.1der.link">mlomsk.1der.link/telegram/chat</a>''')
         self.assertEqual('''example (http://example.com)
 http://example.com
-example.com''', result)
+example.com
+mlomsk.1der.link/telegram/chat''', result)
