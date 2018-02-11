@@ -27,7 +27,7 @@ from dateutil.parser import parse
 
 from icalendar.cal import Component
 
-from calbot.formatting import normalize_locale, format_event
+from calbot.formatting import normalize_locale, format_event, strip_tags
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT, CalendarsConfigFile
 from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events, sort_events
 from calbot.stats import update_stats, get_stats
@@ -330,3 +330,11 @@ class CalbotTestCase(unittest.TestCase):
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual('None\nСуббота, 03 Февраль 2018, 13:03 UTC\nNone\nNone', result)
+
+    def test_strip_tags_href(self):
+        result = strip_tags('''<a href="http://example.com">example</a>
+<a href="http://example.com">http://example.com</a>
+<a href="http://example.com">example.com</a>''')
+        self.assertEqual('''example (http://example.com)
+http://example.com
+example.com''', result)
