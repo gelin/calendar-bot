@@ -72,7 +72,7 @@ class BlankFormat:
 class MLStripper(HTMLParser):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(convert_charrefs=True)
         self.reset()
         self.strict = False
         self.convert_charrefs = True
@@ -108,5 +108,7 @@ class MLStripper(HTMLParser):
 
 def strip_tags(html):
     s = MLStripper()
+    s.feed('<div>')     # <div> is required for Python 3.4.2, otherwise parser does nothing
     s.feed(str(html))
+    s.feed('</div>')
     return s.get_data()

@@ -340,3 +340,16 @@ class CalbotTestCase(unittest.TestCase):
 http://example.com
 example.com
 mlomsk.1der.link/telegram/chat''', result)
+
+    def test_format_event_real_html(self):
+        component = Component()
+        component.add('summary', 'Встреча ML-клуба')
+        component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
+        component.add('description', '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5. Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.<br><br>В этот раз у нас будет 2 доклада:')
+        timezone = pytz.timezone('Asia/Omsk')
+        component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
+        event = Event.from_vevent(component, timezone)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual('Встреча ML-клуба\nСуббота, 10 Февраль 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
