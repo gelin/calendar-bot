@@ -101,12 +101,12 @@ def run_bot(config):
                               )
         logger.info('Started polling')
 
-    start_delay = 0
+    updater.job_queue.run_repeating(update_stats, config.stats_interval, first=0, context=config)
+
+    start_delay = 1
     for calendar in config.all_calendars():
         queue_calendar_update(updater.job_queue, calendar, start_delay)
         start_delay += 1
-
-    updater.job_queue.run_repeating(update_stats, config.stats_interval, first=0, context=config)
 
     updater.idle()
 
