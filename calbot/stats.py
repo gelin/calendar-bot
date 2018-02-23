@@ -18,16 +18,20 @@
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
 
 import os
+import datetime
 from configparser import ConfigParser
 
 from calbot.conf import ConfigFile
+
 
 __all__ = ['update_stats', 'get_stats']
 
 
 STATS_MESSAGE_FORMAT="""Active users: {}
 Active calendars: {}
-Notified events: {}"""
+Notified events: {}
+Last calendars processed:
+{} - {}"""
 
 
 def update_stats(config):
@@ -43,6 +47,8 @@ def update_stats(config):
     users = 0
     calendars = 0
     events = 0
+    last_process_min = datetime.datetime.utcnow().isoformat()
+    last_process_max = datetime.datetime.utcfromtimestamp(0).isoformat()
 
     for name in os.listdir(config.vardir):
         if os.path.isdir(os.path.join(config.vardir, name)):
@@ -50,12 +56,16 @@ def update_stats(config):
             user_id = name
             for calendar in config.load_calendars(user_id):
                 calendars += 1
+                last_process_min = min(calendar.last_process_at or last_process_min, last_process_min)
+                last_process_max = max(calendar.last_process_at or last_process_max, last_process_max)
                 calendar.load_events()
                 events += len(calendar.events)
 
     parser.set('stats', 'users', str(users))
     parser.set('stats', 'calendars', str(calendars))
     parser.set('stats', 'events', str(events))
+    parser.set('stats', 'last_process_min', last_process_min)
+    parser.set('stats', 'last_process_max', last_process_max)
 
     config_file.write(parser)
 
@@ -82,6 +92,10 @@ class Stats:
         """Number of active calendar"""
         self.events = kwargs['events']
         """Number of notified events"""
+        self.last_process_min = kwargs['last_process_min']
+        """Timestamp of the calendar processed, min value"""
+        self.last_process_max = kwargs['last_process_max']
+        """Timestamp of the calendar processed, max value"""
 
     @classmethod
     def load(cls, stats_config):
@@ -93,10 +107,16 @@ class Stats:
             users=parser.getint('stats', 'users', fallback=0),
             calendars=parser.getint('stats', 'calendars', fallback=0),
             events=parser.getint('stats', 'events', fallback=0),
+            last_process_min=parser.get('stats', 'last_process_min', fallback=None),
+            last_process_max=parser.get('stats', 'last_process_max', fallback=None)
         )
 
     def __str__(self):
-        return STATS_MESSAGE_FORMAT.format(self.users, self.calendars, self.events)
+        return STATS_MESSAGE_FORMAT.format(self.users,
+                                           self.calendars,
+                                           self.events,
+                                           self.last_process_min,
+                                           self.last_process_max)
 
 
 class StatsConfigFile(ConfigFile):
