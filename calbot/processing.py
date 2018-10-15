@@ -21,34 +21,37 @@ import logging
 
 from calbot.formatting import format_event
 from calbot.ical import Calendar
+from calbot.stats import update_stats
 
 
-__all__ = ['queue_calendar_update']
+__all__ = ['update_calendars']
 
 logger = logging.getLogger('processing')
 
 
-def queue_calendar_update(job_queue, calendar, start_delay=0):
+def update_calendars(bot, job):
     """
-    Adds the configured calendar to queue for processing
-    :param job_queue: bot's job queue
-    :param calendar: CalendarConfig instance
-    :param start_delay: delay start of immediate calendar processing for specified number of seconds
+    Runs the update of all calendars one by one.
+    Finally, updates statistics.
+    :param bot: Bot instance
+    :param job: it's context contains main config
     :return: None
     """
-    job_queue.run_repeating(update_calendar, calendar.interval, first=start_delay, context=calendar)
+    config = job.context
+    for calendar in config.all_calendars():
+        update_calendar(bot, calendar)
+    update_stats(config)
 
 
-def update_calendar(bot, job):
+def update_calendar(bot, config):
     """
     Job queue callback to update data from the calendar.
     Reads ical file and notifies events if necessary.
     After the first successful read the calendar is marked as validated.
     :param bot: Bot instance
-    :param job: it's context has CalendarConfig instance to persist and update events notification status
+    :param config: CalendarConfig instance to persist and update events notification status
     :return: None
     """
-    config = job.context
     try:
         calendar = Calendar(config)
         for event in calendar.events:

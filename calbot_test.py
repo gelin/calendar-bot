@@ -139,7 +139,6 @@ class CalbotTestCase(unittest.TestCase):
     def test_default_user_confg(self):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         self.assertEqual('var', user_config.vardir)
-        self.assertEqual(3600, user_config.interval)
         self.assertEqual('TEST', user_config.id)
         self.assertEqual(DEFAULT_FORMAT, user_config.format)
         self.assertIsNone(user_config.language)
@@ -176,7 +175,7 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('summary\nЧетверг, 23 Июнь 2016, 19:50 UTC\nlocation\ndescription', result)
+        self.assertEqual('summary\nЧетверг, 23 июня 2016, 19:50 UTC\nlocation\ndescription', result)
 
     def test_normalize_locale(self):
         result = normalize_locale('it')
@@ -320,7 +319,7 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('summary\nСуббота, 03 Февраль 2018, 13:03 UTC\nlocation\ndescription\n\n link (link.html)', result)
+        self.assertEqual('summary\nСуббота, 03 февраля 2018, 13:03 UTC\nlocation\ndescription\n\n link (link.html)', result)
 
     def test_format_event_blanks(self):
         component = Component()
@@ -329,7 +328,7 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('None\nСуббота, 03 Февраль 2018, 13:03 UTC\nNone\nNone', result)
+        self.assertEqual('None\nСуббота, 03 февраля 2018, 13:03 UTC\nNone\nNone', result)
 
     def test_strip_tags_href(self):
         result = strip_tags('''<a href="http://example.com">example</a>
@@ -352,4 +351,4 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('Встреча ML-клуба\nСуббота, 10 Февраль 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
+        self.assertEqual('Встреча ML-клуба\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)

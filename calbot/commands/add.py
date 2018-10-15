@@ -24,8 +24,6 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
-from calbot.processing import queue_calendar_update
-
 
 __all__ = ['create_handler']
 
@@ -77,7 +75,7 @@ def add_calendar(bot, update, chat_data, job_queue, config):
     channel_id = message.text.strip()
 
     calendar = config.add_calendar(user_id, url, channel_id)
-    queue_calendar_update(job_queue, calendar)
+    # queue_calendar_update(job_queue, calendar)    # TODO process the calendar immediately
 
     message.reply_text(
         'The new calendar is queued for verification.\nWait for messages here and in the %s.' % channel_id)

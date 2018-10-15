@@ -96,7 +96,8 @@ import logging
 import os
 from datetime import time, datetime
 
-__all__ = ['Config']
+
+__all__ = ['Config', 'ConfigFile']
 
 logger = logging.getLogger('conf')
 
@@ -126,8 +127,6 @@ class Config:
         """the bot token"""
         self.interval = config.getint('bot', 'interval', fallback=3600)
         """the interval to reread calendars, in seconds"""
-        self.stats_interval = config.getint('bot', 'stats_interval', fallback=3600)
-        """the interval to update statistics, in seconds"""
         self.bootstrap_retries = config.getint('bot', 'bootstrap_retries', fallback=0)
         """Whether the bootstrapping phase of the Updater will retry on failures on the Telegram server."""
         self.poll_interval = config.getfloat('polling', 'poll_interval', fallback=0.0)
@@ -257,8 +256,6 @@ class UserConfig:
     def __init__(self, **kwargs):
         self.vardir = kwargs['vardir']
         """Base var directory"""
-        self.interval = kwargs['interval']
-        """Update interval for the calendar"""
         self.id = kwargs['user_id']
         """ID of the user"""
         self.format = kwargs['format']
@@ -280,7 +277,6 @@ class UserConfig:
         """
         return cls(
             vardir=config.vardir,
-            interval=config.interval,
             user_id=user_id,
             format=DEFAULT_FORMAT,
             language=None,
@@ -298,7 +294,6 @@ class UserConfig:
         """
         return cls(
             vardir=config.vardir,
-            interval=config.interval,
             user_id=user_id,
             format=config_parser.get('settings', 'format', fallback=DEFAULT_FORMAT),
             language=config_parser.get('settings', 'language', fallback=None),
@@ -361,8 +356,6 @@ class CalendarConfig:
     def __init__(self, **kwargs):
         self.vardir = kwargs['vardir']
         """Base var directory"""
-        self.interval = kwargs['interval']
-        """Update interval for the calendar"""
         self.id = kwargs['cal_id']
         """Current calendar ID"""
         self.user_id = kwargs['user_id']
@@ -402,7 +395,6 @@ class CalendarConfig:
         """
         return cls(
             vardir=user_config.vardir,
-            interval=user_config.interval,
             user_id=user_config.id,
             format=user_config.format,
             language=user_config.language,
@@ -427,7 +419,6 @@ class CalendarConfig:
         verified = config_parser.getboolean(section, 'verified', fallback=False)
         return cls(
             vardir=user_config.vardir,
-            interval=user_config.interval,
             user_id=user_config.id,
             format=user_config.format,
             language=user_config.language,
