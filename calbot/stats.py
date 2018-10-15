@@ -19,6 +19,7 @@
 
 import os
 import datetime
+import logging
 from configparser import ConfigParser
 
 from calbot.conf import ConfigFile
@@ -26,6 +27,7 @@ from calbot.conf import ConfigFile
 
 __all__ = ['update_stats', 'get_stats']
 
+logger = logging.getLogger('stats')
 
 STATS_MESSAGE_FORMAT="""Active users: {}
 Active calendars: {}
@@ -40,34 +42,37 @@ def update_stats(config):
     :param config: Main config object
     :return: None
     """
-    config_file = StatsConfigFile(config.vardir)
-    parser = ConfigParser(interpolation=None)
-    parser.add_section('stats')
+    try:
+        config_file = StatsConfigFile(config.vardir)
+        parser = ConfigParser(interpolation=None)
+        parser.add_section('stats')
 
-    users = 0
-    calendars = 0
-    events = 0
-    last_process_min = datetime.datetime.utcnow().isoformat()
-    last_process_max = datetime.datetime.utcfromtimestamp(0).isoformat()
+        users = 0
+        calendars = 0
+        events = 0
+        last_process_min = datetime.datetime.utcnow().isoformat()
+        last_process_max = datetime.datetime.utcfromtimestamp(0).isoformat()
 
-    for name in os.listdir(config.vardir):
-        if os.path.isdir(os.path.join(config.vardir, name)):
-            users += 1
-            user_id = name
-            for calendar in config.load_calendars(user_id):
-                calendars += 1
-                last_process_min = min(calendar.last_process_at or last_process_min, last_process_min)
-                last_process_max = max(calendar.last_process_at or last_process_max, last_process_max)
-                calendar.load_events()
-                events += len(calendar.events)
+        for name in os.listdir(config.vardir):
+            if os.path.isdir(os.path.join(config.vardir, name)):
+                users += 1
+                user_id = name
+                for calendar in config.load_calendars(user_id):
+                    calendars += 1
+                    last_process_min = min(calendar.last_process_at or last_process_min, last_process_min)
+                    last_process_max = max(calendar.last_process_at or last_process_max, last_process_max)
+                    calendar.load_events()
+                    events += len(calendar.events)
 
-    parser.set('stats', 'users', str(users))
-    parser.set('stats', 'calendars', str(calendars))
-    parser.set('stats', 'events', str(events))
-    parser.set('stats', 'last_process_min', last_process_min)
-    parser.set('stats', 'last_process_max', last_process_max)
+        parser.set('stats', 'users', str(users))
+        parser.set('stats', 'calendars', str(calendars))
+        parser.set('stats', 'events', str(events))
+        parser.set('stats', 'last_process_min', last_process_min)
+        parser.set('stats', 'last_process_max', last_process_max)
 
-    config_file.write(parser)
+        config_file.write(parser)
+    except Exception as e:
+        logger.warning('Failed to update stats', exc_info=True)
 
 
 def get_stats(config):

@@ -30,7 +30,7 @@ from calbot.commands import cal as cal_command
 from calbot.commands import format as format_command
 from calbot.commands import lang as lang_command
 from calbot.commands import advance as advance_command
-from calbot.processing import queue_calendar_update
+from calbot.processing import update_calendars
 
 
 __all__ = ['run_bot']
@@ -101,12 +101,7 @@ def run_bot(config):
                               )
         logger.info('Started polling')
 
-    updater.job_queue.run_repeating(update_stats, config.stats_interval, first=0, context=config)
-
-    start_delay = 1
-    for calendar in config.all_calendars():
-        queue_calendar_update(updater.job_queue, calendar, start_delay)
-        start_delay += 1
+    updater.job_queue.run_repeating(update_calendars, config.interval, first=0, context=config)
 
     updater.idle()
 
@@ -181,14 +176,3 @@ def error(bot, update, error):
     :return: None
     """
     logger.warning('Update "%s" caused error "%s"' % (update, error))
-
-
-def update_stats(bot, job):
-    """
-    Job queue callback to update statistics.
-    :param bot: Bot instance
-    :param job: it's context has Config instance
-    :return: None
-    """
-    config = job.context
-    stats.update_stats(config)
