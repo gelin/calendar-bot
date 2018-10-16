@@ -24,13 +24,14 @@ from calbot.ical import Calendar
 from calbot.stats import update_stats
 
 
-__all__ = ['update_calendars']
+__all__ = ['update_calendars_job', 'update_calendars', 'update_calendar']
 
 logger = logging.getLogger('processing')
 
 
-def update_calendars(bot, job):
+def update_calendars_job(bot, job):
     """
+    Job queue callback.
     Runs the update of all calendars one by one.
     Finally, updates statistics.
     :param bot: Bot instance
@@ -38,6 +39,17 @@ def update_calendars(bot, job):
     :return: None
     """
     config = job.context
+    update_calendars(bot, config)
+
+
+def update_calendars(bot, config):
+    """
+    Runs the update of all calendars one by one.
+    Finally, updates statistics.
+    :param bot: Bot instance
+    :param config: main config
+    :return: None
+    """
     for calendar in config.all_calendars():
         update_calendar(bot, calendar)
     update_stats(config)
@@ -45,7 +57,7 @@ def update_calendars(bot, job):
 
 def update_calendar(bot, config):
     """
-    Job queue callback to update data from the calendar.
+    Update data from the calendar.
     Reads ical file and notifies events if necessary.
     After the first successful read the calendar is marked as validated.
     :param bot: Bot instance

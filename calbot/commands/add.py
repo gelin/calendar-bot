@@ -24,6 +24,7 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
+from calbot.processing import update_calendar
 
 __all__ = ['create_handler']
 
@@ -40,15 +41,15 @@ def create_handler(config):
     :return: ConversationHandler
     """
 
-    def add_calendar_with_config(bot, update, chat_data, job_queue):
-        return add_calendar(bot, update, chat_data, job_queue, config)
+    def add_calendar_with_config(bot, update, chat_data):
+        return add_calendar(bot, update, chat_data, config)
 
     return ConversationHandler(
         entry_points=[CommandHandler('add', start)],
         states={
             ENTERING_URL: [MessageHandler(Filters.text, enter_url, pass_chat_data=True)],
             ENTERING_CHANNEL: [MessageHandler(
-                Filters.text, add_calendar_with_config, pass_chat_data=True, pass_job_queue=True)]
+                Filters.text, add_calendar_with_config, pass_chat_data=True)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
@@ -68,17 +69,19 @@ def enter_url(bot, update, chat_data):
     return ENTERING_CHANNEL
 
 
-def add_calendar(bot, update, chat_data, job_queue, config):
+def add_calendar(bot, update, chat_data, config):
     message = update.message
     user_id = str(message.chat_id)
     url = chat_data['calendar_url']
     channel_id = message.text.strip()
 
     calendar = config.add_calendar(user_id, url, channel_id)
-    # queue_calendar_update(job_queue, calendar)    # TODO process the calendar immediately
 
     message.reply_text(
         'The new calendar is queued for verification.\nWait for messages here and in the %s.' % channel_id)
+
+    update_calendar(bot, calendar)
+
     return END
 
 
