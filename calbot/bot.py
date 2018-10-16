@@ -30,8 +30,7 @@ from calbot.commands import cal as cal_command
 from calbot.commands import format as format_command
 from calbot.commands import lang as lang_command
 from calbot.commands import advance as advance_command
-from calbot.processing import update_calendars
-
+from calbot.processing import update_calendars_job
 
 __all__ = ['run_bot']
 
@@ -101,7 +100,7 @@ def run_bot(config):
                               )
         logger.info('Started polling')
 
-    updater.job_queue.run_repeating(update_calendars, config.interval, first=0, context=config)
+    updater.job_queue.run_repeating(update_calendars_job, config.interval, first=0, context=config)
 
     updater.idle()
 
