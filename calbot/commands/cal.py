@@ -74,7 +74,10 @@ Verified: %s''' % (calendar.id, calendar.name, calendar.url, calendar.channel_id
         return EDITING
     except Exception as e:
         logger.warning('Failed to load calendar %s for user %s', calendar_id, user_id, exc_info=True)
-        message.reply_text('Failed to find calendar %s:\n%s' % (calendar_id, e))
+        try:
+            message.reply_text('Failed to find calendar %s:\n%s' % (calendar_id, e))
+        except Exception:
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
         return END
 
 
@@ -93,7 +96,10 @@ def del_cal(bot, update, chat_data, job_queue, config):
         message.reply_text('Calendar %s is deleted' % calendar_id)
     except Exception as e:
         logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
-        message.reply_text('Failed to delete calendar %s:\n%s' % (calendar_id, e))
+        try:
+            message.reply_text('Failed to delete calendar %s:\n%s' % (calendar_id, e))
+        except Exception:
+            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
