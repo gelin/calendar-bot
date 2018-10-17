@@ -97,8 +97,11 @@ def set_lang(bot, update, config):
             return SETTING
     except Exception as e:
         logger.warning('Failed to update language to "%s" for user %s', new_lang, user_id, exc_info=True)
-        message.reply_text('Failed to update language:\n%s' % e)
-        message.reply_text('Try again or /cancel')
+        try:
+            message.reply_text('Failed to update language:\n%s' % e)
+            message.reply_text('Try again or /cancel')
+        except Exception:
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
         return SETTING
 
 

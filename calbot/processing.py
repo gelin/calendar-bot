@@ -82,8 +82,11 @@ Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
     except Exception as e:
         logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
         if not config.verified:
-            bot.sendMessage(chat_id=config.user_id,
-                            text='Failed to process calendar %s:\n%s' % (config.id, e))
+            try:
+                bot.sendMessage(chat_id=config.user_id,
+                                text='Failed to process calendar %s:\n%s' % (config.id, e))
+            except Exception:
+                logger.error('Failed to send message to user %s', config.user_id, exc_info=True)
         config.save_error(e)
 
 
