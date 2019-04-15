@@ -20,19 +20,41 @@
 package ical
 
 import (
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func TestReadIcal(t *testing.T) {
+func TestReadIcalSimple(t *testing.T) {
 	timezone, _ := time.LoadLocation("Asia/Omsk")
 	from := time.Date(2016, time.January, 1, 0, 0, 0, 0, timezone)
-	till := time.Date(2017, time.December, 31, 23, 59, 59, 0, timezone)
+	till := time.Date(2017, time.January, 5, 23, 59, 59, 0, timezone)
 
-	events, err := ReadIcal("file://./testdata/test.ics", from, till)
+	events, err := ReadIcal("testdata/simple.ics", from, till)
 
 	if err != nil {
 		t.Error(err)
 	}
-	println(events)
+
+	assert.ElementsMatch(t, events,
+		[]Event{
+			{
+				Time:        time.Date(2016, 6, 24, 0, 0, 0, 0, time.UTC), // TODO: calendar timezone
+				Title:       "Событие по-русски",
+				Description: "Какое-то описание\\nВ две строки", // TODO: newline
+			},
+			{
+				Time:        time.Date(2016, 6, 23, 0, 0, 0, 0, time.UTC),
+				Title:       "Event title",
+				Description: "Event description",
+			},
+			{
+				Time:  time.Date(2017, 1, 4, 10, 0, 0, 0, timezone),
+				Title: "Daily event",
+			},
+			{
+				Time:  time.Date(2017, 1, 5, 10, 0, 0, 0, timezone),
+				Title: "Daily event",
+			},
+		})
 }

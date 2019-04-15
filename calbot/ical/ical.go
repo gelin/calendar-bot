@@ -19,7 +19,12 @@
 
 package ical
 
-import "time"
+import (
+	"github.com/apognu/gocal"
+	"github.com/utahta/go-openuri"
+	"io"
+	"time"
+)
 
 type Event struct {
 	Time        time.Time
@@ -28,11 +33,35 @@ type Event struct {
 }
 
 // Reads .ical file from the provided URL.
-// Returns all events in the specified interval (after inclusive and before exclusive)
+// Returns all events in the specified interval
 // including the repeating events.
 func ReadIcal(url string, after time.Time, before time.Time) (events []Event, err error) {
-	events = make([]Event, 0)
-	err = nil
+	reader, err := readUrl(url)
+	if err != nil {
+		return
+	}
+	defer reader.Close()
 
+	parser := gocal.NewParser(reader)
+	parser.Start, parser.End = &after, &before
+	err = parser.Parse()
+	if err != nil {
+		return
+	}
+
+	for _, vevent := range parser.Events {
+		event := Event{
+			Time:        *vevent.Start,
+			Title:       vevent.Summary,
+			Description: vevent.Description,
+		}
+		events = append(events, event)
+	}
+
+	return
+}
+
+func readUrl(url string) (reader io.ReadCloser, err error) {
+	reader, err = openuri.Open(url)
 	return
 }
