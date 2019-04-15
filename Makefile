@@ -2,13 +2,17 @@
 help:
 	@echo "make run | deploy"
 
-.PHONY: install
-install:
-	pip3 install -r requirements.txt
+.PHONY: build
+build:
+	cd calbot && $(MAKE) build 
 
 .PHONY: run
 run:
-	./calbot.py
+	cd calbot && $(MAKE) run
+
+.PHONY: install
+install:
+	pip3 install -r requirements.txt
 
 .PHONY: test
 test:
