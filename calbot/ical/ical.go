@@ -17,10 +17,22 @@
  * along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
  */
 
-package main
+package ical
 
-//import "calbot/ical"
+import "time"
 
-func main() {
-	println("Hello")
+type Event struct {
+	Time        time.Time
+	Title       string
+	Description string
+}
+
+// Reads .ical file from the provided URL.
+// Returns all events in the specified interval (after inclusive and before exclusive)
+// including the repeating events.
+func ReadIcal(url string, after time.Time, before time.Time) (events []Event, err error) {
+	events = make([]Event, 0)
+	err = nil
+
+	return
 }

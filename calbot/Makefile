@@ -14,9 +14,13 @@ clean:
 build:
 #	go build -ldflags $(LD_FLAGS) -o build/$(NAME)
 	go build -o build/$(NAME)
+	
+.PHONY: test
+test:
+	go test calbot/ical
 
 .PHONY: run
-run: clean build
+run: clean build test
 	build/$(NAME)
 
 .PHONY: update
