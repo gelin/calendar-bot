@@ -17,4 +17,4 @@ locales_install:
   - ko_KR.UTF-8
   - tr_TR.UTF-8
   - ca_ES.UTF-8
-
+  - cs_CZ.UTF-8
