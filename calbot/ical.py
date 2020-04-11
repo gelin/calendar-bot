@@ -147,11 +147,12 @@ class Event:
         event_time = None
         notify_datetime = None
 
-        # DTSTART is always in UTC, not possible to get event-specific timezone
-        # TODO: now iCal has TZID attribute for DTSTART and DTEND, need to take care on it
         dtstart = vevent.get('DTSTART').dt
         if isinstance(dtstart, datetime):
-            dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
+            if dtstart.tzinfo is None or dtstart.tzinfo == pytz.UTC:
+                dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
+            else:
+                dtstarttz = dtstart
             event_date = dtstarttz.date()
             event_time = dtstarttz.timetz()
             notify_datetime = datetime.combine(event_date, event_time)

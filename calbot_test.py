@@ -360,7 +360,10 @@ mlomsk.1der.link/telegram/chat''', result)
         calendar = Calendar(config)
         self.assertEqual(pytz.timezone('Asia/Omsk'), calendar.timezone)
 
-        # events = list(calendar.read_ical(calendar.url, datetime.datetime(2020, 3, 23), datetime.datetime(2020, 4, 26)))
+        # events = sort_events(list(
+        #     calendar.read_ical(calendar.url, datetime.datetime(2020, 3, 23), datetime.datetime(2020, 4, 26))
+        # ))
+        #
         # event = events[0]
         # self.assertEqual(datetime.date(2020, 3, 25), event.date)
         # self.assertEqual(datetime.time(19, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
