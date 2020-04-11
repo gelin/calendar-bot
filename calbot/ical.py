@@ -97,7 +97,7 @@ class Calendar:
 
                 elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
-                    explicit_events.add((event.id, event.notify_datetime))
+                    explicit_events.add(event.instance_id)
                     yield event
                     try:
                         for repeat in event.repeat_between(after, before, explicit_events):
@@ -115,8 +115,16 @@ class Event:
     def __init__(self, **kwargs):
         self.id = kwargs['id']
         """unique id of the event"""
+        self.uid = kwargs.get('uid', kwargs['id'])
+        """uid from vevent from """
+        self.instance_id = kwargs.get('instance_id', (kwargs['id'], None))
+        """event instance id, to identify each event in the sequence of recurring events"""
         self.title = kwargs['title']
         """title of the event"""
+        self.location = kwargs.get('location')
+        """the event location as string"""
+        self.description = kwargs.get('description')
+        """the event description"""
         self.date = kwargs.get('date')
         """event (start) date"""
         self.time = kwargs.get('time')
@@ -126,10 +134,8 @@ class Event:
         uses day_start if time for current event is None"""
         self.repeat_rule = kwargs.get('repeat_rule')
         """event repeat rule, can be None"""
-        self.location = kwargs.get('location')
-        """the event location as string"""
-        self.description = kwargs.get('description')
-        """the event description"""
+        self.recurrence_id = kwargs.get('recurrence_id')
+        """event recurrence ID, used to override recurred events, can be None"""
         self.notified_for_advance = kwargs.get('notified_for_advance')
         """hours in advance for which this event should be notified"""
         self.day_start = kwargs.get('day_start')
@@ -145,16 +151,18 @@ class Event:
         :return: calendar event instance
         """
 
+        event_uid = str(vevent.get('UID'))
+        event_title = str(vevent.get('SUMMARY'))
+        event_location = str(vevent.get('LOCATION'))
+        event_description = str(vevent.get('DESCRIPTION'))
+
         event_date = None
         event_time = None
         notify_datetime = None
 
         dtstart = vevent.get('DTSTART').dt
         if isinstance(dtstart, datetime):
-            if dtstart.tzinfo is None or dtstart.tzinfo == pytz.UTC:
-                dtstarttz = vevent.get('DTSTART').dt.astimezone(timezone)
-            else:
-                dtstarttz = dtstart
+            dtstarttz = timezoned(dtstart, timezone)
             event_date = dtstarttz.date()
             event_time = dtstarttz.timetz()
             notify_datetime = datetime.combine(event_date, event_time)
@@ -166,16 +174,35 @@ class Event:
         if vevent.get('RRULE') is not None:
             repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
 
+        recurrence_id = None
+        if vevent.get('RECURRENCE-ID') is not None:
+            try:
+                recurrence_id = timezoned(vevent.get('RECURRENCE-ID').dt, timezone)
+            except:
+                logger.warning('Failed to get RECURRENCE-ID: %s', str(vevent.get('RECURRENCE-ID')), exc_info=True)
+
+        if recurrence_id is None:
+            event_id = event_uid
+        else:
+            event_id = "%s_%s" % (event_uid, str(recurrence_id))
+
+        event_instance_id = (event_uid, notify_datetime)
+
+        event_day_start = day_start.replace(tzinfo=timezone) if day_start is not None else None
+
         return cls(
-            id=str(vevent.get('UID')),
-            title=str(vevent.get('SUMMARY')),
+            id=event_id,
+            uid=event_uid,
+            instance_id=event_instance_id,
+            title=event_title,
+            location=event_location,
+            description=event_description,
             date=event_date,
             time=event_time,
             notify_datetime=notify_datetime,
             repeat_rule=repeat_rule,
-            location=str(vevent.get('LOCATION')),
-            description=str(vevent.get('DESCRIPTION')),
-            day_start=day_start.replace(tzinfo=timezone) if day_start is not None else None
+            recurrence_id=recurrence_id,
+            day_start=event_day_start
         )
 
     @classmethod
@@ -196,14 +223,18 @@ class Event:
             notify_datetime = datetime.combine(event_date, event.day_start)
             event_id += '_' + event_date.isoformat()
 
+        event_instance_id = (event.uid, notify_datetime)
+
         return cls(
             id=event_id,
+            uid=event.uid,
+            instance_id=event_instance_id,
             title=event.title,
+            location=event.location,
+            description=event.description,
             date=event_date,
             time=event_time,
             notify_datetime=notify_datetime,
-            location=event.location,
-            description=event.description,
             day_start=event.day_start
         )
 
@@ -219,6 +250,8 @@ class Event:
         if self.repeat_rule is None:
             return []
 
+        # https://www.kanzaki.com/docs/ical/recurrenceId.html
+
         if self.time is not None:
             dtstart = datetime.combine(self.date, self.time)
             rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
@@ -232,9 +265,12 @@ class Event:
         dates = list(filter(lambda d: d != dtstart, dates))
         dates = list(filter(lambda d: d != after, dates))
         if explicit_events is not None:
-            dates = list(filter(lambda d: (self.id, d) not in explicit_events, dates))
+            dates = list(filter(lambda d: self._instance_id_at(d) not in explicit_events, dates))
         events = list(map(lambda d: Event.copy_for_date(self, d), dates))
         return events
+
+    def _instance_id_at(self, dt):
+        return self.uid, dt
 
     def to_dict(self):
         """
@@ -289,14 +325,24 @@ def sort_events(events):
     return sorted(events, key=sort_key)
 
 
+def timezoned(dt, timezone):
+    if dt.tzinfo is None or dt.tzinfo == pytz.UTC:
+        return dt.astimezone(timezone)
+    else:
+        return dt
+
+
 def _get_sample_event():
     now = datetime.now(tz=pytz.timezone('Asia/Omsk'))
     return Event(
         id='SAMPLE EVENT',
+        uid='SAMPLE EVENT',
+        instance_id=('SAMPLE EVENT', now),
         title='This is sample event',
         location='It happens in Milky Way',
         description='The sample event is to demonstrate how the event can be formatted',
         date=now.date(),
         time=now.timetz())
+
 
 sample_event = _get_sample_event()

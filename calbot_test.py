@@ -354,6 +354,7 @@ mlomsk.1der.link/telegram/chat''', result)
         self.assertEqual('Встреча ML-клуба\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
 
     def test_read_repeated_event_override(self):
+        # https://www.kanzaki.com/docs/ical/recurrenceId.html
         timezone = pytz.timezone('Asia/Omsk')
 
         config = CalendarConfig.new(
@@ -384,4 +385,5 @@ mlomsk.1der.link/telegram/chat''', result)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
 
-        # TODO: what to do with repeating IDs?
+        ids = set(map(lambda e: e.id, events))
+        self.assertEqual(len(events), len(ids))     # all ids must be unique
