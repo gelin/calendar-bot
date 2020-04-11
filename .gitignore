@@ -1,0 +1,9 @@
+*.iml
+.idea/*
+
+*.retry
+
+var/*
+
+ansible/group_vars/*.yml
+calbot.cfg
