@@ -77,6 +77,7 @@ class Calendar:
         logger.info('Getting %s', url)
         with urlopen(url) as f:
             timezone_set = 'none'
+            explicit_events = set()
 
             vcalendar = icalendar.Calendar.from_ical(f.read())
             self.name = str(vcalendar.get('X-WR-CALNAME'))
@@ -96,9 +97,10 @@ class Calendar:
 
                 elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
+                    explicit_events.add((event.id, event.notify_datetime))
                     yield event
                     try:
-                        for repeat in event.repeat_between(after, before):
+                        for repeat in event.repeat_between(after, before, explicit_events):
                             yield repeat
                     except:
                         logger.warning('Failed to repeat %s at %s %s',
@@ -205,12 +207,13 @@ class Event:
             day_start=event.day_start
         )
 
-    def repeat_between(self, after, before):
+    def repeat_between(self, after, before, explicit_events=None):
         """
         Creates copies of this event repeating between specified datetime.
         The resulting list never includes the original (this) event.
-        :param after:   start of the interval (exclusive)
-        :param before:  end of the interval (inclusive)
+        :param after:           start of the interval (exclusive)
+        :param before:          end of the interval (inclusive)
+        :param explicit_events: set of (id, datetime) pairs to skip repetition at these moments
         :return:    list of event repeats, each with it's own unique id
         """
         if self.repeat_rule is None:
@@ -228,6 +231,8 @@ class Event:
 
         dates = list(filter(lambda d: d != dtstart, dates))
         dates = list(filter(lambda d: d != after, dates))
+        if explicit_events is not None:
+            dates = list(filter(lambda d: (self.id, d) not in explicit_events, dates))
         events = list(map(lambda d: Event.copy_for_date(self, d), dates))
         return events
 
