@@ -1,0 +1,120 @@
+BEGIN:VCALENDAR
+PRODID:-//Google Inc//Google Calendar 70.9054//EN
+VERSION:2.0
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Omsk IT Events
+X-WR-TIMEZONE:Asia/Omsk
+
+BEGIN:VTIMEZONE
+TZID:Asia/Omsk
+X-LIC-LOCATION:Asia/Omsk
+BEGIN:STANDARD
+TZOFFSETFROM:+0600
+TZOFFSETTO:+0600
+TZNAME:+06
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+
+BEGIN:VTIMEZONE
+TZID:Asia/Almaty
+X-LIC-LOCATION:Asia/Almaty
+BEGIN:STANDARD
+TZOFFSETFROM:+0600
+TZOFFSETTO:+0600
+TZNAME:+06
+DTSTART:19700101T000000
+END:STANDARD
+END:VTIMEZONE
+
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20200408T190000
+DTEND;TZID=Asia/Omsk:20200408T203000
+DTSTAMP:20200407T044006Z
+UID:6pqb3bhvtu0k2aq285m13ppnr7@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Omsk I
+ T Events;X-NUM-GUESTS=0:mailto:aqclsibjm591jbbk875uio9k40@group.calendar.go
+ ogle.com
+RECURRENCE-ID;TZID=Asia/Omsk:20200408T190000
+CREATED:20180108T111016Z
+DESCRIPTION:Дата  Ужин - это свободный формат\, где можно пообщаться на тем
+ у анализа данных\, маш.обуча.\, обсудить соревнования по ML\, ближе познако
+ миться. Определенной темы беседы нет\, но я думаю она сразу же найдется.\n\
+ n\nВстречаемся в дискорде на нашем сервере: https://discord.gg/WhKnyWr.\nТе
+ кстовый чат в телеграмме: https://t.me/mlomsk
+LAST-MODIFIED:20200329T065050Z
+LOCATION:
+SEQUENCE:2
+STATUS:CONFIRMED
+SUMMARY:Дата Ужин (OML)
+TRANSP:OPAQUE
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20190925T190000
+DTEND;TZID=Asia/Omsk:20190925T203000
+RRULE:FREQ=WEEKLY;INTERVAL=2;BYDAY=WE
+EXDATE;TZID=Asia/Omsk:20200101T190000
+DTSTAMP:20200407T044006Z
+UID:6pqb3bhvtu0k2aq285m13ppnr7@google.com
+ATTENDEE;CUTYPE=INDIVIDUAL;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;CN=Omsk I
+ T Events;X-NUM-GUESTS=0:mailto:aqclsibjm591jbbk875uio9k40@group.calendar.go
+ ogle.com
+CREATED:20180108T111016Z
+DESCRIPTION:Дата  Ужин - это свободный формат\, где можно пообщаться на тем
+ у анализа данных\, маш.обуча.\, обсудить соревнования по ML\, ближе познако
+ миться. Определенной темы беседы нет\, но я думаю она сразу же найдется.\n\
+ n\nМесто встречи: Пиццот\, Лермонтова 8
+LAST-MODIFIED:20190916T124150Z
+LOCATION:Пиццот\, ул. Лермонтова\, 8\, Омск\, Омская обл.\, Россия\, 644024
+SEQUENCE:2
+STATUS:CONFIRMED
+SUMMARY:Дата Ужин (OML)
+TRANSP:OPAQUE
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20190206T190000
+DTEND;TZID=Asia/Omsk:20190206T203000
+RRULE:FREQ=WEEKLY;UNTIL=20190319T175959Z;INTERVAL=2;BYDAY=WE
+DTSTAMP:20200407T044006Z
+UID:2cfl3hu8lmsnenr2clvn7o9j5l_R20190206T130000@google.com
+CREATED:20181001T030034Z
+DESCRIPTION:Дата&nbsp\; Ужин - это свободный формат\, где можно пообщаться
+ на тему анализа данных\, маш.обуча.\, обсудить соревнования по ML\, ближе п
+ ознакомиться. Определенной темы беседы нет\, но я думаю она сразу же найдет
+ ся.<br><br><br>Место встречи: "<a href="https://beta.2gis.ru/omsk/search/%D
+ 1%80%D0%BE%D0%B7%D1%8B%20%D0%BC%D0%BE%D1%80%D0%BE%D0%B7%D1%8B/firm/70000001
+ 032187308?lang=ru&amp\;m=73.37494%2C54.984481%2F18" id="ow324" __is_owner="
+ true">Розы Морозы</a>"\, Ленина 14
+LAST-MODIFIED:20190916T124112Z
+LOCATION:ул. Ленина\, 14\, Омск\, Омская обл.\, Россия\, 644043
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Дата ужин (OML)
+TRANSP:OPAQUE
+END:VEVENT
+
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20181212T190000
+DTEND;TZID=Asia/Omsk:20181212T203000
+RRULE:FREQ=WEEKLY;UNTIL=20190205T175959Z;INTERVAL=2;BYDAY=WE
+DTSTAMP:20200407T044006Z
+UID:2cfl3hu8lmsnenr2clvn7o9j5l_R20181212T130000@google.com
+CREATED:20181001T030034Z
+DESCRIPTION:Дата&nbsp\; Ужин - это свободный формат\, где можно пообщаться
+ на тему анализа данных\, маш.обуча.\, обсудить соревнования по ML\, ближе п
+ ознакомиться. Определенной темы беседы нет\, но я думаю она сразу же найдет
+ ся.<br><br><br>Встречаемся в "<a href="https://2gis.ru/omsk/firm/7000000102
+ 4728151%2C73.37907%2C54.970692?queryState=center%2F73.377696%2C54.970692%2F
+ zoom%2F17">Бутерbrot</a>" в на Ленина 50.
+LAST-MODIFIED:20190916T124112Z
+LOCATION:ул. Ленина\, 50\, Омск\, Омская обл.\, Россия\, 644042
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Дата ужин (OML)
+TRANSP:OPAQUE
+END:VEVENT
+
+END:VCALENDAR

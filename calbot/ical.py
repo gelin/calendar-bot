@@ -76,17 +76,24 @@ class Calendar:
         # TODO also filter past events to avoid reading of the whole calendar
         logger.info('Getting %s', url)
         with urlopen(url) as f:
+            timezone_set = 'none'
+
             vcalendar = icalendar.Calendar.from_ical(f.read())
             self.name = str(vcalendar.get('X-WR-CALNAME'))
+            self.description = str(vcalendar.get('X-WR-CALDESC'))
+
             if vcalendar.get('X-WR-TIMEZONE') is not None:
                 self.timezone = pytz.timezone(str(vcalendar.get('X-WR-TIMEZONE')))
-            self.description = str(vcalendar.get('X-WR-CALDESC'))
+                timezone_set = 'x-wr-timezone'
+
             for component in vcalendar.walk():
-                if component.name == 'VTIMEZONE':
+                if component.name == 'VTIMEZONE' and timezone_set in ('none', 'x-wr-timezone'):
                     try:
                         self.timezone = pytz.timezone(str(component.get('TZID')))
+                        timezone_set = 'vtimezone.tzid'
                     except Exception as e:
                         logger.warning(e)
+
                 elif component.name == 'VEVENT':
                     event = Event.from_vevent(component, self.timezone, self.day_start)
                     yield event
@@ -95,7 +102,7 @@ class Calendar:
                             yield repeat
                     except:
                         logger.warning('Failed to repeat %s at %s %s',
-                            event.id, str(event.date), str(event.time), exc_info=1)
+                            event.id, str(event.date), str(event.time), exc_info=True)
 
 
 class Event:

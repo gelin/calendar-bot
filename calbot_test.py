@@ -352,3 +352,27 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual('Встреча ML-клуба\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
+
+    def test_read_repeated_event_override(self):
+        config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test/repeat.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(config)
+        self.assertEqual(pytz.timezone('Asia/Omsk'), calendar.timezone)
+
+        # events = list(calendar.read_ical(calendar.url, datetime.datetime(2020, 3, 23), datetime.datetime(2020, 4, 26)))
+        # event = events[0]
+        # self.assertEqual(datetime.date(2020, 3, 25), event.date)
+        # self.assertEqual(datetime.time(19, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        # self.assertEqual('Дата Ужин (OML)', event.title)
+        # self.assertRegex(event.description, r'*.Пиццот*.')
+        # event = events[1]
+        # self.assertEqual(datetime.date(2020, 4, 8), event.date)
+        # self.assertEqual(datetime.time(19, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        # self.assertEqual('Дата Ужин (OML)', event.title)
+        # self.assertRegex(event.description, r'*.discord*.')
+        # event = events[2]
+        # self.assertEqual(datetime.date(2020, 4, 22), event.date)
+        # self.assertEqual(datetime.time(19, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        # self.assertEqual('Дата Ужин (OML)', event.title)
+        # self.assertRegex(r'*.Пиццот*.', event.description)
