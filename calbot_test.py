@@ -54,7 +54,7 @@ class CalbotTestCase(unittest.TestCase):
     def test_read_calendar(self):
         config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+            '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         calendar = Calendar(config)
         self.assertEqual(pytz.timezone('Asia/Omsk'), calendar.timezone)
         self.assertEqual('Тест', calendar.name)
@@ -147,7 +147,7 @@ class CalbotTestCase(unittest.TestCase):
     def test_default_calendar_config(self):
         calendar_config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+            '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         self.assertEqual([48, 24], calendar_config.advance)
 
     def test_set_format(self):
@@ -216,7 +216,7 @@ class CalbotTestCase(unittest.TestCase):
     def test_save_calendar(self):
         calendar_config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+            '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         calendar = Calendar(calendar_config)
         calendar_config.save_calendar(calendar)
         config_file = CalendarsConfigFile('var', 'TEST')
@@ -233,7 +233,7 @@ class CalbotTestCase(unittest.TestCase):
         stats1 = get_stats(config)
         calendar_config = CalendarConfig.new(
             UserConfig.new(config, 'TEST'),
-            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+            '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         calendar = Calendar(calendar_config)
         calendar_config.save_calendar(calendar)
         update_stats(config)
@@ -297,7 +297,7 @@ class CalbotTestCase(unittest.TestCase):
     def test_calendar_save_error(self):
         calendar_config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
-            '1', 'file://{}/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+            '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         now = datetime.datetime.utcnow()
         calendar_config.save_error(Exception('TEST ERROR'))
         config_file = CalendarsConfigFile('var', 'TEST')
