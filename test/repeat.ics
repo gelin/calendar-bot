@@ -136,4 +136,35 @@ SUMMARY:Дата ужин (OML)
 TRANSP:OPAQUE
 END:VEVENT
 
+BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20181215T160000
+DTEND;TZID=Asia/Omsk:20181215T190000
+RRULE:FREQ=WEEKLY;UNTIL=20190614T175959Z
+EXDATE;TZID=Asia/Omsk:20190608T160000
+EXDATE;TZID=Asia/Omsk:20190601T160000
+EXDATE;TZID=Asia/Omsk:20190518T160000
+EXDATE;TZID=Asia/Omsk:20190511T160000
+EXDATE;TZID=Asia/Omsk:20190504T160000
+EXDATE;TZID=Asia/Omsk:20190330T160000
+EXDATE;TZID=Asia/Omsk:20190223T160000
+EXDATE;TZID=Asia/Omsk:20190209T160000
+EXDATE;TZID=Asia/Omsk:20190105T160000
+EXDATE;TZID=Asia/Omsk:20181229T160000
+DTSTAMP:20200407T044006Z
+UID:1jhr86fgcjqqa1tt18541shd64@google.com
+CREATED:20181215T033454Z
+DESCRIPTION:Место проведения: Таубе 5\, 1 этаж\, кабинет 112.<br><br>Регист
+ рация в кружке обязательна:&nbsp\; <a href="http://mlomsk.1der.link/practic
+ e/register">http://mlomsk.1der.link/practice/register</a> !!<br><br>Контакт
+ ы организатора:<br>Илья Сиганов\, <a href="mailto:ilya.blan4@gmail.com" tar
+ get="_blank">ilya.blan4@gmail.com</a>\, <a href="https://vk.com/senior_siga
+ n" target="_blank">vk.com/senior_sigan</a>
+LAST-MODIFIED:20190612T190739Z
+LOCATION:ул. Таубе\, 5\, Омск\, Омская\, Россия\, 644037
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:ML кружок IT-lift | 7bits
+TRANSP:OPAQUE
+END:VEVENT
+
 END:VCALENDAR

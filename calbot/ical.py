@@ -178,8 +178,16 @@ class Event:
 
         exception_dates = []
         if vevent.get('EXDATE') is not None:
+            exdate = vevent.get('EXDATE')
             try:
-                exception_dates = map(lambda d: d.dt, vevent.get('EXDATE').dts)
+                exlist = []
+                if isinstance(exdate, list):
+                    exlist = exdate
+                else:
+                    exlist = [ exdate ]
+                for exd in exlist:
+                    for exdt in exd.dts:
+                        exception_dates.append(exdt.dt)
             except:
                 logger.warning('Failed to get EXDATE: %s', str(vevent.get('EXDATE')), exc_info=True)
 

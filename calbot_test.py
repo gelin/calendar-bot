@@ -368,17 +368,17 @@ mlomsk.1der.link/telegram/chat''', result)
                                datetime.datetime(2020, 4, 26, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[4]
+        event = events[5]
         self.assertEqual(datetime.date(2020, 3, 25), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
-        event = events[5]
+        event = events[6]
         self.assertEqual(datetime.date(2020, 4, 8), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'discord')
-        event = events[6]
+        event = events[7]
         self.assertEqual(datetime.date(2020, 4, 22), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
@@ -401,12 +401,12 @@ mlomsk.1der.link/telegram/chat''', result)
                                datetime.datetime(2019, 2, 10, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[1]
+        event = events[2]
         self.assertEqual(datetime.date(2019, 1, 23), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Бутерbrot')
-        event = events[2]
+        event = events[5]
         self.assertEqual(datetime.date(2019, 2, 6), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
@@ -418,12 +418,12 @@ mlomsk.1der.link/telegram/chat''', result)
                                datetime.datetime(2019, 3, 24, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[2]
+        event = events[3]
         self.assertEqual(datetime.date(2019, 3, 6), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Розы Морозы')
-        event = events[3]
+        event = events[6]
         self.assertEqual(datetime.date(2019, 3, 20), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
@@ -443,12 +443,12 @@ mlomsk.1der.link/telegram/chat''', result)
                                datetime.datetime(2020, 1, 19, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[4]
+        event = events[5]
         self.assertEqual(datetime.date(2019, 12, 18), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
-        event = events[5]
+        event = events[6]
         self.assertEqual(datetime.date(2020, 1, 15), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
