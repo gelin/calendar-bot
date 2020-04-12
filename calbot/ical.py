@@ -191,6 +191,7 @@ class Event:
             except:
                 logger.warning('Failed to get EXDATE: %s', str(vevent.get('EXDATE')), exc_info=True)
 
+        # https://www.kanzaki.com/docs/ical/recurrenceId.html
         recurrence_id = None
         if vevent.get('RECURRENCE-ID') is not None:
             try:
@@ -267,8 +268,6 @@ class Event:
         """
         if self.repeat_rule is None:
             return []
-
-        # https://www.kanzaki.com/docs/ical/recurrenceId.html
 
         if self.time is not None:
             dtstart = datetime.combine(self.date, self.time)
@@ -352,7 +351,7 @@ def sort_events(events):
 
 
 def timezoned(dt, timezone):
-    if dt.tzinfo is None or dt.tzinfo == pytz.UTC:
+    if isinstance(dt, datetime) and (dt.tzinfo is None or dt.tzinfo == pytz.UTC):
         return dt.astimezone(timezone)
     else:
         return dt
