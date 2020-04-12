@@ -429,5 +429,27 @@ mlomsk.1der.link/telegram/chat''', result)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
 
+    def test_read_repeated_event_exdate(self):
+        timezone = pytz.timezone('Asia/Omsk')
 
-    # TODO: test EXDATE
+        config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test/repeat.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(config)
+
+        events = sort_events(list(
+            calendar.read_ical(calendar.url,
+                               datetime.datetime(2019, 12, 16, 0, 0, 0, tzinfo=timezone),
+                               datetime.datetime(2020, 1, 19, 23, 59, 59, tzinfo=timezone))
+        ))
+
+        event = events[4]
+        self.assertEqual(datetime.date(2019, 12, 18), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата Ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Пиццот')
+        event = events[5]
+        self.assertEqual(datetime.date(2020, 1, 15), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата Ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Пиццот')
