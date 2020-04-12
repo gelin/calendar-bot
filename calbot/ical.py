@@ -134,8 +134,6 @@ class Event:
         uses day_start if time for current event is None"""
         self.repeat_rule = kwargs.get('repeat_rule')
         """event repeat rule, can be None"""
-        self.exception_dates = kwargs.get('exception_dates', [])
-        """event exception dates, can be None"""
         self.recurrence_id = kwargs.get('recurrence_id')
         """event recurrence ID, used to override recurred events, can be None"""
         self.notified_for_advance = kwargs.get('notified_for_advance')
@@ -172,11 +170,9 @@ class Event:
             event_date = dtstart
             notify_datetime = datetime.combine(event_date, day_start.replace(tzinfo=timezone))
 
-        repeat_rule = None
+        repeat_rule = vevent.content_line('DTSTART')
         if vevent.get('RRULE') is not None:
-            repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
-
-        exception_dates = []
+            repeat_rule += "\n" + vevent.get('RRULE').to_ical().decode('utf-8')
         if vevent.get('EXDATE') is not None:
             exdate = vevent.get('EXDATE')
             try:
@@ -186,8 +182,7 @@ class Event:
                 else:
                     exlist = [ exdate ]
                 for exd in exlist:
-                    for exdt in exd.dts:
-                        exception_dates.append(exdt.dt)
+                    repeat_rule += "\n" + exd.to_ical().decode('utf-8')
             except:
                 logger.warning('Failed to get EXDATE: %s', str(vevent.get('EXDATE')), exc_info=True)
 
@@ -219,7 +214,6 @@ class Event:
             time=event_time,
             notify_datetime=notify_datetime,
             repeat_rule=repeat_rule,
-            exception_dates=exception_dates,
             recurrence_id=recurrence_id,
             day_start=event_day_start
         )
@@ -271,13 +265,13 @@ class Event:
 
         if self.time is not None:
             dtstart = datetime.combine(self.date, self.time)
-            rule_set = self._rule_set(dtstart)
-            dates = rule_set.between(after, before, inc=True)
+            rule = rrule.rrulestr(self.repeat_rule)
+            dates = rule.between(after, before, inc=True)
         else:
             dtstart = self.date
-            rule_set = self._rule_set(dtstart)
+            rule = rrule.rrulestr(self.repeat_rule)
             # TODO: It still fails for full-day events with RRULE:FREQ=MONTHLY;WKST=MO;UNTIL=20150513T235959Z;BYMONTHDAY=14
-            dates = rule_set.between(after.replace(tzinfo=None), before.replace(tzinfo=None), inc=True)
+            dates = rule.between(after.replace(tzinfo=None), before.replace(tzinfo=None), inc=True)
 
         dates = list(filter(lambda d: d != dtstart, dates))
         dates = list(filter(lambda d: d != after, dates))
@@ -285,14 +279,6 @@ class Event:
             dates = list(filter(lambda d: self._instance_id_at(d) not in explicit_events, dates))
         events = list(map(lambda d: Event.copy_for_date(self, d), dates))
         return events
-
-    def _rule_set(self, dtstart):
-        rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
-        rule_set = rrule.rruleset()
-        rule_set.rrule(rule)
-        for exdate in self.exception_dates:
-            rule_set.exdate(exdate)
-        return rule_set
 
     def _instance_id_at(self, dt):
         return self.uid, dt

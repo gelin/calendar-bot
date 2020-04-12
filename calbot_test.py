@@ -261,7 +261,7 @@ class CalbotTestCase(unittest.TestCase):
             title='REPEATING EVENT',
             date=datetime.date(2017, 1, 4),
             time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
-            repeat_rule='FREQ=DAILY'
+            repeat_rule="DTSTART:20170104100000Z\nRRULE:FREQ=DAILY"
         )
         repeats = event.repeat_between(
             datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
