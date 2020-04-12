@@ -351,8 +351,13 @@ def sort_events(events):
 
 
 def timezoned(dt, timezone):
-    if isinstance(dt, datetime) and (dt.tzinfo is None or dt.tzinfo == pytz.UTC):
-        return dt.astimezone(timezone)
+    if isinstance(dt, datetime):
+        if dt.tzinfo is None:
+            return timezone.localize(dt)
+        elif dt.tzinfo == pytz.UTC:
+            return dt.astimezone(timezone)
+        else:
+            return dt
     else:
         return dt
 
