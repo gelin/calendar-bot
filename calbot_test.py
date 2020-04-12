@@ -354,7 +354,6 @@ mlomsk.1der.link/telegram/chat''', result)
         self.assertEqual('Встреча ML-клуба\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
 
     def test_read_repeated_event_override(self):
-        # https://www.kanzaki.com/docs/ical/recurrenceId.html
         timezone = pytz.timezone('Asia/Omsk')
 
         config = CalendarConfig.new(
@@ -369,17 +368,17 @@ mlomsk.1der.link/telegram/chat''', result)
                                datetime.datetime(2020, 4, 26, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[3]
+        event = events[4]
         self.assertEqual(datetime.date(2020, 3, 25), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
-        event = events[4]
+        event = events[5]
         self.assertEqual(datetime.date(2020, 4, 8), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'discord')
-        event = events[5]
+        event = events[6]
         self.assertEqual(datetime.date(2020, 4, 22), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
@@ -387,3 +386,48 @@ mlomsk.1der.link/telegram/chat''', result)
 
         ids = set(map(lambda e: e.id, events))
         self.assertEqual(len(events), len(ids))     # all ids must be unique
+
+    def test_read_repeated_event_until(self):
+        timezone = pytz.timezone('Asia/Omsk')
+
+        config = CalendarConfig.new(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            '1', 'file://{}/test/repeat.ics'.format(os.path.dirname(__file__)), 'TEST')
+        calendar = Calendar(config)
+
+        events = sort_events(list(
+            calendar.read_ical(calendar.url,
+                               datetime.datetime(2019, 1, 21, 0, 0, 0, tzinfo=timezone),
+                               datetime.datetime(2019, 2, 10, 23, 59, 59, tzinfo=timezone))
+        ))
+
+        event = events[1]
+        self.assertEqual(datetime.date(2019, 1, 23), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Бутерbrot')
+        event = events[2]
+        self.assertEqual(datetime.date(2019, 2, 6), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Розы Морозы')
+
+        events = sort_events(list(
+            calendar.read_ical(calendar.url,
+                               datetime.datetime(2019, 3, 4, 0, 0, 0, tzinfo=timezone),
+                               datetime.datetime(2019, 3, 24, 23, 59, 59, tzinfo=timezone))
+        ))
+
+        event = events[2]
+        self.assertEqual(datetime.date(2019, 3, 6), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Розы Морозы')
+        event = events[3]
+        self.assertEqual(datetime.date(2019, 3, 20), event.date)
+        self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
+        self.assertEqual('Дата ужин (OML)', event.title)
+        self.assertRegex(event.description, r'Пиццот')
+
+
+    # TODO: test EXDATE

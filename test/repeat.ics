@@ -75,6 +75,25 @@ TRANSP:OPAQUE
 END:VEVENT
 
 BEGIN:VEVENT
+DTSTART;TZID=Asia/Omsk:20190320T190000
+DTEND;TZID=Asia/Omsk:20190320T203000
+RRULE:FREQ=WEEKLY;UNTIL=20190917T175959Z;INTERVAL=2;BYDAY=WE
+DTSTAMP:20200407T044006Z
+UID:2cfl3hu8lmsnenr2clvn7o9j5l_R20190320T130000@google.com
+CREATED:20181001T030034Z
+DESCRIPTION:Дата  Ужин - это свободный формат\, где можно пообщаться на тем
+ у анализа данных\, маш.обуча.\, обсудить соревнования по ML\, ближе познако
+ миться. Определенной темы беседы нет\, но я думаю она сразу же найдется.\n\
+ n\nМесто встречи: Пиццот\, Лермонтова 8
+LAST-MODIFIED:20190916T124112Z
+LOCATION:Пиццот\, ул. Лермонтова\, 8\, Омск\, Омская обл.\, Россия\, 644024
+SEQUENCE:0
+STATUS:CONFIRMED
+SUMMARY:Дата ужин (OML)
+TRANSP:OPAQUE
+END:VEVENT
+
+BEGIN:VEVENT
 DTSTART;TZID=Asia/Omsk:20190206T190000
 DTEND;TZID=Asia/Omsk:20190206T203000
 RRULE:FREQ=WEEKLY;UNTIL=20190319T175959Z;INTERVAL=2;BYDAY=WE
