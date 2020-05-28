@@ -49,7 +49,12 @@ class CalbotTestCase(unittest.TestCase):
         event = Event.from_vevent(component, pytz.UTC)
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         result = format_event(user_config, event)
-        self.assertEqual('summary\nThursday, 23 June 2016, 19:50 UTC\nlocation\ndescription', result)
+        self.assertEqual(
+            'summary'\
+            '\nThursday, 23 June 2016, 19:50 UTC'\
+            '\nlocation'\
+            '\ndescription',
+            result)
 
     def test_read_calendar(self):
         config = CalendarConfig.new(
@@ -211,7 +216,12 @@ class CalbotTestCase(unittest.TestCase):
         event = Event.from_vevent(component, timezone, datetime.time(10, 0))
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         result = format_event(user_config, event)
-        self.assertEqual('summary\nThursday, 23 June 2016\nlocation\ndescription', result)
+        self.assertEqual(
+            'summary'\
+            '\nThursday, 23 June 2016'\
+            '\nlocation'\
+            '\ndescription',
+            result)
 
     def test_save_calendar(self):
         calendar_config = CalendarConfig.new(
@@ -313,13 +323,23 @@ class CalbotTestCase(unittest.TestCase):
         component = Component()
         component.add('summary', '<b>summary</b>')
         component.add('location', '<i>location</i>')
-        component.add('description', '<b>description</b><br><br>&nbsp;<a href="link.html">link</a>')
+        component.add('description',
+            '<b>description</b>'\
+            '<br>'\
+            '<br>&nbsp;<a href="link.html">link</a>')
         component.add('dtstart', datetime.datetime(2018, 2, 3, 13, 3, 4, tzinfo=pytz.UTC))
         event = Event.from_vevent(component, pytz.UTC)
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('summary\nСуббота, 03 февраля 2018, 13:03 UTC\nlocation\ndescription\n\n link (link.html)', result)
+        self.assertEqual(
+            'summary'\
+            '\nСуббота, 03 февраля 2018, 13:03 UTC'\
+            '\nlocation'\
+            '\ndescription'\
+            '\n'\
+            '\n link (link.html)',
+            result)
 
     def test_format_event_blanks(self):
         component = Component()
@@ -328,7 +348,12 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('None\nСуббота, 03 февраля 2018, 13:03 UTC\nNone\nNone', result)
+        self.assertEqual(
+            'None'\
+            '\nСуббота, 03 февраля 2018, 13:03 UTC'\
+            '\nNone'\
+            '\nNone',
+            result)
 
     def test_strip_tags_href(self):
         result = strip_tags('''<a href="http://example.com">example</a>
@@ -340,18 +365,29 @@ http://example.com
 example.com
 mlomsk.1der.link/telegram/chat''', result)
 
-    def test_format_event_real_html(self):
+    def test_format_event_real_html_tags_br_and_a(self):
         component = Component()
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
-        component.add('description', '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5. Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.<br><br>В этот раз у нас будет 2 доклада:')
+        component.add('description',
+            '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5. Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.'\
+            '<br>'\
+            '<br>'\
+            'В этот раз у нас будет 2 доклада:')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('Встреча ML-клуба\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk\nул. Таубе, 5, Омск, Омская обл., Россия, 644037\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.\n\nВ этот раз у нас будет 2 доклада:', result)
+        self.assertEqual(
+            'Встреча ML-клуба'\
+            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
+            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
+            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.'\
+            '\n'\
+            '\nВ этот раз у нас будет 2 доклада:',
+            result)
 
     def test_format_event_real_html_tag_p(self):
         component = Component()
