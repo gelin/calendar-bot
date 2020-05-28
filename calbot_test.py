@@ -480,7 +480,52 @@ mlomsk.1der.link/telegram/chat''', result)
             '\n'\
             '\nВсем привет!'\
             '\nСписок:'\
+            '\n'\
             '\nчто-то'\
+            '\nчто-то еще'\
+            '\n'\
+            '\nКонец!',
+            result)
+
+    def test_format_event_real_html_tags_ul_nested(self):
+        component = Component()
+        component.add('summary', 'Встреча ML-клуба')
+        component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
+        component.add('description',
+            '<p>Всем привет!</p>'\
+            '<p>Список:</p>'\
+            '<ul style="">'\
+                '<li>что-то</li>'\
+                '<li>список внутри:'\
+                    '<ul style="">'\
+                        '<li>внутри что-то</li>'\
+                        '<li>внутри что-то еще</li>'\
+                    '</ul>'\
+                '</li>'\
+                '<li>что-то еще</li>'\
+            '</ul>'\
+            'Конец!')
+        timezone = pytz.timezone('Asia/Omsk')
+        component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
+        event = Event.from_vevent(component, timezone)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual(
+            'Встреча ML-клуба'\
+            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
+            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
+            '\n'\
+            '\nВсем привет!'\
+            '\nСписок:'\
+            '\n'\
+            '\nчто-то'\
+            '\nсписок внутри:'\
+            '\n'\
+            '\nвнутри что-то'\
+            '\nвнутри что-то еще'\
+            '\n'\
+            '\n'\
             '\nчто-то еще'\
             '\n'\
             '\nКонец!',
@@ -511,6 +556,7 @@ mlomsk.1der.link/telegram/chat''', result)
             '\n'\
             '\nВсем привет!'\
             '\nСписок:'\
+            '\n'\
             '\nчто-то'\
             '\nчто-то еще'\
             '\n'\
@@ -544,6 +590,7 @@ mlomsk.1der.link/telegram/chat''', result)
             '\nМайский IT-субботник доверяем Gems Development! '\
             '\nРебята подготовят митап для разработчиков.'\
             '\nТемы: '\
+            '\n'\
             '\n'\
             '\nАндрей: «Vue.js».'\
             '\n'\
