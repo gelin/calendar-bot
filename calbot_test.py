@@ -486,6 +486,37 @@ mlomsk.1der.link/telegram/chat''', result)
             '\nКонец!',
             result)
 
+    def test_format_event_real_html_tags_ol_li(self):
+        component = Component()
+        component.add('summary', 'Встреча ML-клуба')
+        component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
+        component.add('description',
+            '<p>Всем привет!</p>'\
+            '<p>Список:</p>'\
+            '<ol style="">'\
+            '<li>что-то</li>'\
+            '<li>что-то еще</li>'\
+            '</ol>'\
+            'Конец!')
+        timezone = pytz.timezone('Asia/Omsk')
+        component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
+        event = Event.from_vevent(component, timezone)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual(
+            'Встреча ML-клуба'\
+            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
+            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
+            '\n'\
+            '\nВсем привет!'\
+            '\nСписок:'\
+            '\nчто-то'\
+            '\nчто-то еще'\
+            '\n'\
+            '\nКонец!',
+            result)
+
     def test_format_event_real_html_tags_ul_li_p(self):
         component = Component()
         component.add('summary', 'Встреча ML-клуба')

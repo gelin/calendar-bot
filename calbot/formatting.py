@@ -100,7 +100,7 @@ class MLStripper(HTMLParser):
                 self.fed.append(self.href)
                 self.fed.append(')')
             self.href = None
-        elif tag == 'ul':
+        elif tag == 'ul' or tag == 'ol':
             self.fed.append('\n\n')
         self.text = []
 
