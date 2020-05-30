@@ -52,7 +52,7 @@ def format_event(user_config, event):
     locale.setlocale(locale.LC_ALL, user_config.language)       # assuming formatting will never be concurrently
     result = user_config.format.format(**event_dict)
     locale.resetlocale()
-    return result
+    return result.strip()
 
 
 class BlankFormat:
@@ -79,28 +79,62 @@ class MLStripper(HTMLParser):
         self.fed = []
         self.href = None
         self.text = []
+        self.list_level = -1
+        self.block_start = False
+        self.block_end = False
 
     def handle_starttag(self, tag, attrs):
         self.text = []
+        self.block_end = False
         if tag == 'a':
             for attr in attrs:
                 if attr[0] == 'href':
                     self.href = attr[1]
         elif tag == 'br':
             self.fed.append('\n')
+        elif tag == 'p':
+            if not self.block_start:
+                self.fed.append('\n')
+            self.block_start = True
+        elif tag in ('ul', 'ol'):
+            if not self.block_start and self.list_level <= 0:
+                self.fed.append('\n')
+            self.list_level = self.list_level + 1
+            self.block_start = True
+        elif tag == 'li':
+            self.fed.append('  ' * self.list_level)
+            self.fed.append('* ')
+            self.block_start = True
 
     def handle_endtag(self, tag):
+        self.block_start = False
         if tag == 'a' and self.href is not None:
             if url_regex.fullmatch(''.join(self.text)) is None:
                 self.fed.append(' (')
                 self.fed.append(self.href)
                 self.fed.append(')')
             self.href = None
+            self.block_end = False
+        elif tag == 'p':
+            if not self.block_end:
+                self.fed.append('\n')
+            self.block_end = True
+        elif tag in ('ul', 'ol'):
+            if not self.block_end or self.list_level <= 0:
+                self.fed.append('\n')
+            self.list_level = self.list_level - 1
+            self.block_end = True
+        elif tag == 'li':
+            if not self.block_end:
+                self.fed.append('\n')
+            self.block_end = True
         self.text = []
 
     def handle_data(self, d):
         self.text.append(d)
         self.fed.append(d)
+        self.block_start = False
+        self.block_end = False
 
     def get_data(self):
         return ''.join(self.fed)
