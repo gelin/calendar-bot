@@ -88,6 +88,14 @@ class MLStripper(HTMLParser):
                     self.href = attr[1]
         elif tag == 'br':
             self.fed.append('\n')
+        elif tag == 'p':
+            self.fed.append('\n')
+        elif tag == 'li':
+            self.fed.append('\n')
+        elif tag == 'ul':
+            self.fed.append('\n')
+        elif tag == 'ol':
+            self.fed.append('\n')
 
     def handle_endtag(self, tag):
         if tag == 'a' and self.href is not None:
@@ -96,6 +104,8 @@ class MLStripper(HTMLParser):
                 self.fed.append(self.href)
                 self.fed.append(')')
             self.href = None
+        elif tag == 'ul' or tag == 'ol':
+            self.fed.append('\n\n')
         self.text = []
 
     def handle_data(self, d):
