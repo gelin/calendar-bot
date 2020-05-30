@@ -50,10 +50,10 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         result = format_event(user_config, event)
         self.assertEqual(
-            'summary'\
-            '\nThursday, 23 June 2016, 19:50 UTC'\
-            '\nlocation'\
-            '\ndescription',
+            'summary\n'
+            'Thursday, 23 June 2016, 19:50 UTC\n'
+            'location\n'
+            'description',
             result)
 
     def test_read_calendar(self):
@@ -77,7 +77,7 @@ class CalbotTestCase(unittest.TestCase):
         self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
         self.assertEqual('Daily event', event.title)
         event = calendar.all_events[3]
-        self.assertTrue(event.date > datetime.date.today(), event.date)   # this event repeats daily somewhere in future
+        self.assertTrue(event.date > datetime.date.today(), event.date)  # this event repeats daily somewhere in future
         self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
         self.assertEqual('Daily event', event.title)
 
@@ -123,7 +123,8 @@ class CalbotTestCase(unittest.TestCase):
                 self.id = 1
                 self.last_notified = 48
 
-        events = [Event.from_vevent(component_now, timezone), Event.from_vevent(component_future24, timezone), Event.from_vevent(component_future48, timezone)]
+        events = [Event.from_vevent(component_now, timezone), Event.from_vevent(component_future24, timezone),
+                  Event.from_vevent(component_future48, timezone)]
         config = TestCalendarConfig()
         result = list(filter_notified_events(events, config))
         self.assertEqual(2, len(result))
@@ -180,7 +181,12 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
-        self.assertEqual('summary\nЧетверг, 23 июня 2016, 19:50 UTC\nlocation\ndescription', result)
+        self.assertEqual(
+            'summary\n'
+            'Четверг, 23 июня 2016, 19:50 UTC\n'
+            'location\n'
+            'description',
+            result)
 
     def test_normalize_locale(self):
         result = normalize_locale('it')
@@ -203,7 +209,8 @@ class CalbotTestCase(unittest.TestCase):
         component_now.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(minutes=10))
         component_future = _get_component()
         component_future.add('dtstart', datetime.datetime.now(tz=timezone) + datetime.timedelta(hours=2))
-        events = [Event.from_vevent(component_future, timezone), Event.from_vevent(component_now, timezone), Event.from_vevent(component_past, timezone)]
+        events = [Event.from_vevent(component_future, timezone), Event.from_vevent(component_now, timezone),
+                  Event.from_vevent(component_past, timezone)]
         result = list(sort_events(events))
         self.assertEqual(events[2], result[0])
         self.assertEqual(events[1], result[1])
@@ -217,10 +224,10 @@ class CalbotTestCase(unittest.TestCase):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         result = format_event(user_config, event)
         self.assertEqual(
-            'summary'\
-            '\nThursday, 23 June 2016'\
-            '\nlocation'\
-            '\ndescription',
+            'summary\n'
+            'Thursday, 23 June 2016\n'
+            'location\n'
+            'description',
             result)
 
     def test_save_calendar(self):
@@ -324,20 +331,20 @@ class CalbotTestCase(unittest.TestCase):
         component.add('summary', '<b>summary</b>')
         component.add('location', '<i>location</i>')
         component.add('description',
-            '<b>description</b>'\
-            '<br>'\
-            '<br>&nbsp;<a href="link.html">link</a>')
+                      '<b>description</b>'
+                      '<br>'
+                      '<br>&nbsp;<a href="link.html">link</a>')
         component.add('dtstart', datetime.datetime(2018, 2, 3, 13, 3, 4, tzinfo=pytz.UTC))
         event = Event.from_vevent(component, pytz.UTC)
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'summary'\
-            '\nСуббота, 03 февраля 2018, 13:03 UTC'\
-            '\nlocation'\
-            '\ndescription'\
-            '\n'\
+            'summary\n'
+            'Суббота, 03 февраля 2018, 13:03 UTC\n'
+            'location\n'
+            'description'
+            '\n'
             '\n link (link.html)',
             result)
 
@@ -349,31 +356,33 @@ class CalbotTestCase(unittest.TestCase):
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'None'\
-            '\nСуббота, 03 февраля 2018, 13:03 UTC'\
-            '\nNone'\
-            '\nNone',
+            'None\n'
+            'Суббота, 03 февраля 2018, 13:03 UTC\n'
+            'None\n'
+            'None',
             result)
 
     def test_strip_tags_href(self):
-        result = strip_tags('''<a href="http://example.com">example</a>
-<a href="http://example.com">http://example.com</a>
-<a href="http://example.com">example.com</a>
-<a href="https://vk.com/away.php?to=http:%2F%2Fmlomsk.1der.link">mlomsk.1der.link/telegram/chat</a>''')
-        self.assertEqual('''example (http://example.com)
-http://example.com
-example.com
-mlomsk.1der.link/telegram/chat''', result)
+        result = strip_tags('<a href="http://example.com">example</a>\n'
+            '<a href="http://example.com">http://example.com</a>\n'
+            '<a href="http://example.com">example.com</a>\n'
+            '<a href="https://vk.com/away.php?to=http:%2F%2Fmlomsk.1der.link">mlomsk.1der.link/telegram/chat</a>\n')
+        self.assertEqual('example (http://example.com)\n'
+            'http://example.com\n'
+            'example.com\n'
+            'mlomsk.1der.link/telegram/chat\n', result)
 
     def test_format_event_real_html_tags_br_and_a(self):
         component = Component()
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5. Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.'\
-            '<br>'\
-            '<br>'\
-            'В этот раз у нас будет 2 доклада:')
+                      '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>'
+                      '&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5. '
+                      'Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.'
+                      '<br>'
+                      '<br>'
+                      'В этот раз у нас будет 2 доклада:')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -381,12 +390,15 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5. Регистрация на встречу: mlomsk.1der.link/meetup/signup.'\
-            '\n'\
-            '\nВ этот раз у нас будет 2 доклада:',
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
+            ' в офисе 7bits (https://vk.com/7bits), Таубе 5. '
+            'Регистрация на встречу: mlomsk.1der.link/meetup/signup.'
+            '\n'
+            '\n'
+            'В этот раз у нас будет 2 доклада:',
             result)
 
     def test_format_event_real_html_tag_p(self):
@@ -394,8 +406,9 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.'\
-            '<p>Регистрация на встречу</p>')
+                      '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>'
+                      '&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.'
+                      '<p>Регистрация на встречу</p>')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -403,10 +416,11 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5.'\
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
+            ' в офисе 7bits (https://vk.com/7bits), Таубе 5.'
             '\nРегистрация на встречу',
             result)
 
@@ -415,8 +429,9 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.'\
-            '<p style="">Регистрация на встречу</p>')
+                      '10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>'
+                      '&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.'
+                      '<p style="">Регистрация на встречу</p>')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -424,10 +439,11 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5.'\
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
+            ' в офисе 7bits (https://vk.com/7bits), Таубе 5.'
             '\nРегистрация на встречу',
             result)
 
@@ -436,9 +452,10 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '<p>10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.</p>'\
-            '<p>Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.</p>'\
-            '<p>В этот раз у нас будет 2 доклада:</p>')
+                      '<p>10 февраля в 11:00 пройдет 5-я встреча&nbsp;<a href="https://vk.com/mlomsk">ML клуба</a>'
+                      '&nbsp;в офисе&nbsp;<a href="https://vk.com/7bits">7bits</a>, Таубе 5.</p>'
+                      '<p>Регистрация на встречу:&nbsp;<a href="https://vk.com/away.php?to=http%3A%2F%2Fmlomsk.1der.link%2Fmeetup%2Fsignup&amp;post=-141957789_74&amp;cc_key=" target="_blank">mlomsk.1der.link/meetup/signup</a>.</p>'
+                      '<p>В этот раз у нас будет 2 доклада:</p>')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -446,12 +463,12 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n'\
-            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk) в офисе 7bits (https://vk.com/7bits), Таубе 5.'\
-            '\nРегистрация на встречу: mlomsk.1der.link/meetup/signup.'\
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
+            ' в офисе 7bits (https://vk.com/7bits), Таубе 5.\n'
+            '\nРегистрация на встречу: mlomsk.1der.link/meetup/signup.\n'
             '\nВ этот раз у нас будет 2 доклада:',
             result)
 
@@ -460,13 +477,13 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '<p>Всем привет!</p>'\
-            '<p>Список:</p>'\
-            '<ul style="">'\
-            '<li>что-то</li>'\
-            '<li>что-то еще</li>'\
-            '</ul>'\
-            'Конец!')
+                      '<p>Всем привет!</p>'
+                      '<p>Список:</p>'
+                      '<ul style="">'
+                      '<li>что-то</li>'
+                      '<li>что-то еще</li>'
+                      '</ul>'
+                      'Конец!')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -474,17 +491,48 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n'\
-            '\nВсем привет!'\
-            '\nСписок:'\
-            '\n'\
-            '\nчто-то'\
-            '\nчто-то еще'\
-            '\n'\
-            '\nКонец!',
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\nВсем привет!\n'
+            '\nСписок:\n'
+            '\n'
+            '* что-то\n'
+            '* что-то еще\n'
+            '\n'
+            'Конец!',
+            result)
+
+    def test_format_event_real_html_tags_ul_in_p(self):
+        component = Component()
+        component.add('summary', 'Встреча ML-клуба')
+        component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
+        component.add('description',
+                      '<p>Всем привет!</p>'
+                      '<p>Список:'
+                      '<ul style="">'
+                      '<li>что-то</li>'
+                      '<li>что-то еще</li>'
+                      '</ul>'
+                      '</p>'
+                      'Конец!')
+        timezone = pytz.timezone('Asia/Omsk')
+        component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
+        event = Event.from_vevent(component, timezone)
+        user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
+        user_config.language = 'ru_RU.UTF-8'
+        result = format_event(user_config, event)
+        self.assertEqual(
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\nВсем привет!\n'
+            '\nСписок:'
+            '\n'
+            '* что-то\n'
+            '* что-то еще\n'
+            '\n'
+            'Конец!',
             result)
 
     def test_format_event_real_html_tags_ul_nested(self):
@@ -492,19 +540,19 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '<p>Всем привет!</p>'\
-            '<p>Список:</p>'\
-            '<ul style="">'\
-                '<li>что-то</li>'\
-                '<li>список внутри:'\
-                    '<ul style="">'\
-                        '<li>внутри что-то</li>'\
-                        '<li>внутри что-то еще</li>'\
-                    '</ul>'\
-                '</li>'\
-                '<li>что-то еще</li>'\
-            '</ul>'\
-            'Конец!')
+                      '<p>Всем привет!</p>'
+                      '<p>Список:</p>'
+                      '<ul style="">'
+                      '<li>что-то</li>'
+                      '<li>список внутри:'
+                      '<ul style="">'
+                      '<li>внутри что-то</li>'
+                      '<li>внутри что-то еще</li>'
+                      '</ul>'
+                      '</li>'
+                      '<li>что-то еще</li>'
+                      '</ul>'
+                      'Конец!')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -512,23 +560,19 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n'\
-            '\nВсем привет!'\
-            '\nСписок:'\
-            '\n'\
-            '\nчто-то'\
-            '\nсписок внутри:'\
-            '\n'\
-            '\nвнутри что-то'\
-            '\nвнутри что-то еще'\
-            '\n'\
-            '\n'\
-            '\nчто-то еще'\
-            '\n'\
-            '\nКонец!',
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\nВсем привет!\n'
+            '\nСписок:\n'
+            '\n'
+            '* что-то\n'
+            '* список внутри:\n'
+            '  * внутри что-то\n'
+            '  * внутри что-то еще\n'
+            '* что-то еще\n'
+            '\n'
+            'Конец!',
             result)
 
     def test_format_event_real_html_tags_ol_li(self):
@@ -536,13 +580,13 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '<p>Всем привет!</p>'\
-            '<p>Список:</p>'\
-            '<ol style="">'\
-            '<li>что-то</li>'\
-            '<li>что-то еще</li>'\
-            '</ol>'\
-            'Конец!')
+                      '<p>Всем привет!</p>'
+                      '<p>Список:</p>'
+                      '<ol style="">'
+                      '<li>что-то</li>'
+                      '<li>что-то еще</li>'
+                      '</ol>'
+                      'Конец!')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -550,17 +594,16 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n'\
-            '\nВсем привет!'\
-            '\nСписок:'\
-            '\n'\
-            '\nчто-то'\
-            '\nчто-то еще'\
-            '\n'\
-            '\nКонец!',
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\nВсем привет!\n'
+            '\nСписок:\n'
+            '\n'
+            '* что-то\n'
+            '* что-то еще\n'
+            '\n'
+            'Конец!',
             result)
 
     def test_format_event_real_html_tags_ul_li_p(self):
@@ -568,14 +611,14 @@ mlomsk.1der.link/telegram/chat''', result)
         component.add('summary', 'Встреча ML-клуба')
         component.add('location', 'ул. Таубе, 5, Омск, Омская обл., Россия, 644037')
         component.add('description',
-            '<p style="">Майский IT-субботник доверяем Gems Development!</p> '\
-            '<p style="">Ребята подготовят митап для разработчиков.</p>'\
-            '<p style="">Темы:&nbsp;</p>'\
-            '<ul style="">'\
-            '<li><p>Андрей: «Vue.js».</p></li>'\
-            '<li><p>Виктор «Гибкие механизмы».</p></li>'\
-            '</ul>'\
-            'До встречи!')
+                      '<p style="">Майский IT-субботник доверяем Gems Development!</p> '
+                      '<p style="">Ребята подготовят митап для разработчиков.</p>'
+                      '<p style="">Темы:&nbsp;</p>'
+                      '<ul style="">'
+                      '<li><p>Андрей: «Vue.js».</p></li>'
+                      '<li><p>Виктор «Гибкие механизмы».</p></li>'
+                      '</ul>'
+                      'До встречи!')
         timezone = pytz.timezone('Asia/Omsk')
         component.add('dtstart', datetime.datetime(2018, 2, 10, 11, 0, 0, tzinfo=timezone))
         event = Event.from_vevent(component, timezone)
@@ -583,20 +626,17 @@ mlomsk.1der.link/telegram/chat''', result)
         user_config.language = 'ru_RU.UTF-8'
         result = format_event(user_config, event)
         self.assertEqual(
-            'Встреча ML-клуба'\
-            '\nСуббота, 10 февраля 2018, 11:00 Asia/Omsk'\
-            '\nул. Таубе, 5, Омск, Омская обл., Россия, 644037'\
-            '\n'\
-            '\nМайский IT-субботник доверяем Gems Development! '\
-            '\nРебята подготовят митап для разработчиков.'\
-            '\nТемы: '\
-            '\n'\
-            '\n'\
-            '\nАндрей: «Vue.js».'\
-            '\n'\
-            '\nВиктор «Гибкие механизмы».'\
-            '\n'\
-            '\nДо встречи!',
+            'Встреча ML-клуба\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
+            '\nМайский IT-субботник доверяем Gems Development!\n '
+            '\nРебята подготовят митап для разработчиков.\n'
+            '\nТемы: \n'
+            '\n'
+            '* Андрей: «Vue.js».\n'
+            '* Виктор «Гибкие механизмы».\n'
+            '\n'
+            'До встречи!',
             result)
 
     def test_read_repeated_event_override(self):
@@ -631,7 +671,7 @@ mlomsk.1der.link/telegram/chat''', result)
         self.assertRegex(event.description, r'Пиццот')
 
         ids = set(map(lambda e: e.id, events))
-        self.assertEqual(len(events), len(ids))     # all ids must be unique
+        self.assertEqual(len(events), len(ids))  # all ids must be unique
 
     def test_read_repeated_event_until(self):
         timezone = pytz.timezone('Asia/Omsk')
