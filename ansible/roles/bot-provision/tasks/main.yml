@@ -1,6 +1,6 @@
 ---
 
-- import_tasks: 'bot-provision'
+- import_tasks: 'bot-provision.yml'
   tags:
     - bot
     - bot:provision

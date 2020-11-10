@@ -1,13 +1,12 @@
 ---
 - name: Install Python, Nginx, Letsencypt
   hosts: bothosts
-  remote_user: root
 
   roles:
-    - common
+#    - common
     - locales
     - python
-    - nginx
-    - letsencrypt
-    - nginx-bot
+#    - nginx
+#    - letsencrypt
+#    - nginx-bot
     - bot-provision
