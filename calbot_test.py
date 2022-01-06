@@ -142,19 +142,23 @@ class CalbotTestCase(unittest.TestCase):
         self.assertEqual(0, event.notify_datetime.minute)
         self.assertEqual(pytz.UTC, event.notify_datetime.tzinfo)
 
-    def test_default_user_confg(self):
+    def test_default_user_config(self):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
         self.assertEqual('var', user_config.vardir)
         self.assertEqual('TEST', user_config.id)
         self.assertEqual(DEFAULT_FORMAT, user_config.format)
         self.assertIsNone(user_config.language)
         self.assertEqual([48, 24], user_config.advance)
+        self.assertEqual(3, user_config.errors_count_threshold)
 
     def test_default_calendar_config(self):
         calendar_config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
             '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
         self.assertEqual([48, 24], calendar_config.advance)
+        self.assertEqual(3, calendar_config.errors_count_threshold)
+        self.assertEqual(0, calendar_config.last_errors_count)
+        self.assertTrue(calendar_config.enabled)
 
     def test_set_format(self):
         user_config = UserConfig.new(Config('calbot.cfg.sample'), 'TEST')
@@ -242,6 +246,9 @@ class CalbotTestCase(unittest.TestCase):
             config_file.read_parser(),
             '1')
         self.assertEqual('Тест', calendar_config.name)
+        self.assertEqual(3, calendar_config.errors_count_threshold)
+        self.assertEqual(0, calendar_config.last_errors_count)
+        self.assertTrue(calendar_config.enabled)
         shutil.rmtree('var/TEST')
 
     def test_update_stats(self):
@@ -324,6 +331,26 @@ class CalbotTestCase(unittest.TestCase):
             '1')
         self.assertTrue(parse(calendar_config.last_process_at) > now)
         self.assertEqual('TEST ERROR', calendar_config.last_process_error)
+        self.assertEqual(3, calendar_config.errors_count_threshold)
+        self.assertEqual(1, calendar_config.last_errors_count)
+        self.assertTrue(calendar_config.enabled)
+
+        now = datetime.datetime.utcnow()
+        calendar_config.save_error(Exception('TEST ERROR 2'))
+        calendar_config = CalendarConfig.load(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            config_file.read_parser(),
+            '1')
+        calendar_config.save_error(Exception('TEST ERROR 3'))
+        calendar_config = CalendarConfig.load(
+            UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
+            config_file.read_parser(),
+            '1')
+        self.assertTrue(parse(calendar_config.last_process_at) > now)
+        self.assertEqual('TEST ERROR 3', calendar_config.last_process_error)
+        self.assertEqual(3, calendar_config.last_errors_count)
+        self.assertFalse(calendar_config.enabled)
+
         shutil.rmtree('var/TEST')
 
     def test_format_event_html(self):

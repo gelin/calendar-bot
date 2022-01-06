@@ -18,63 +18,7 @@
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
 
 """
-We have this hierarchy of data to be persisted.
-
-@startuml
-
-class User <<Runtime>> {
-    chat_id
-}
-
-class UserConfig <<Persist>> {
-    chat_id
-    notification_format
-    notification_language
-    notification_advance_hours
-}
-
-User *- UserConfig
-
-class Calendar <<Runtime>> {
-    id
-    url
-    name
-    timezone
-    description
-}
-
-class CalendarConfig <<Persist>> {
-    id
-    url
-    name
-    notify_channel_id
-    verified
-    last_process_at
-    last_process_error
-}
-
-Calendar *- CalendarConfig
-
-class Event <<Runtime>> {
-    id
-    title
-    date
-    location
-    description
-}
-
-class EventConfig <<Persist>> {
-    id
-    last_notified_advance
-}
-
-Event *- EventConfig
-
-User *-- "*" Calendar
-Calendar *-- "*" Event
-
-@enduml
-
+We have a hierarchy of data to be persisted.
 So, under `var` directory we have the following files and folders.
 
 ```
@@ -108,6 +52,8 @@ DEFAULT_FORMAT = '''{title}
 
 DEFAULT_ADVANCE = [48, 24]
 
+DEFAULT_ERRORS_COUNT_THRESHOLD = 12
+
 
 class Config:
     """
@@ -129,12 +75,17 @@ class Config:
         """the interval to reread calendars, in seconds"""
         self.bootstrap_retries = config.getint('bot', 'bootstrap_retries', fallback=0)
         """Whether the bootstrapping phase of the Updater will retry on failures on the Telegram server."""
+        self.errors_count_threshold = config.getint('bot', 'errors_count_threshold',
+                                                    fallback=DEFAULT_ERRORS_COUNT_THRESHOLD)
+        """Disable a calendar if it processing attempts failed with so many errors"""
+
         self.poll_interval = config.getfloat('polling', 'poll_interval', fallback=0.0)
         """Time to wait between polling updates from Telegram"""
         self.timeout = config.getfloat('polling', 'timeout', fallback=10.0)
         """Timeout in seconds for long polling"""
         self.read_latency = config.getfloat('polling', 'read_latency', fallback=2.0)
         """Additional timeout in seconds to allow the response from Telegram servers."""
+
         self.webhook = config.getboolean('webhook', 'webhook', fallback=False)
         """use webhook or not"""
         self.domain = config.get('webhook', 'domain', fallback=None)
@@ -142,6 +93,7 @@ class Config:
         self.listen = config.get('webhook', 'listen', fallback='[::1]')
         """IP address to listen by webhook"""
         self.port = config.getint('webhook', 'port', fallback=5000)
+        """webhook port"""
 
     def user_calendars(self, user_id):
         """
@@ -266,6 +218,8 @@ class UserConfig:
         """Array of hours for advance the calendar event"""
         self.config_parser = kwargs.get('config_parser', None)
         """ConfigParser from which this object was loaded, None if this is new a config"""
+        self.errors_count_threshold = kwargs.get('errors_count_threshold', DEFAULT_ERRORS_COUNT_THRESHOLD)
+        """Disable a calendar if it processing attempts failed with so many errors"""
 
     @classmethod
     def new(cls, config, user_id):
@@ -281,6 +235,7 @@ class UserConfig:
             format=DEFAULT_FORMAT,
             language=None,
             advance=DEFAULT_ADVANCE,
+            errors_count_threshold=config.errors_count_threshold
         )
 
     @classmethod
@@ -301,7 +256,8 @@ class UserConfig:
                 map(int,
                     config_parser.get('settings', 'advance', fallback=' '.join(map(str, DEFAULT_ADVANCE))).split())
             ),
-            config_parser=config_parser
+            config_parser=config_parser,
+            errors_count_threshold=config.errors_count_threshold,
         )
 
     def set_format(self, format):
@@ -368,6 +324,8 @@ class CalendarConfig:
         """Channel where to broadcast calendar events"""
         self.verified = kwargs['verified']
         """Flag indicating should the calendar fetching errors be sent to user"""
+        self.enabled = kwargs['enabled']
+        """Flag calendar is enabled and should be processed"""
         self.format = kwargs['format']
         """Format string for the event"""
         self.language = kwargs['language']
@@ -382,6 +340,9 @@ class CalendarConfig:
         """Moment when the calendar was processed last time"""
         self.last_process_error = kwargs.get('last_process_error')
         """Error message if last processing failed with an error"""
+        self.last_errors_count = kwargs.get('last_errors_count', 0)
+        """How many errors were observed during last calendar processing attempts"""
+        self.errors_count_threshold = kwargs.get('errors_count_threshold', DEFAULT_ERRORS_COUNT_THRESHOLD)
 
     @classmethod
     def new(cls, user_config, cal_id, url, channel_id):
@@ -404,7 +365,9 @@ class CalendarConfig:
             name=None,
             channel_id=channel_id,
             verified=False,
-            )
+            enabled=True,
+            errors_count_threshold=user_config.errors_count_threshold,
+        )
 
     @classmethod
     def load(cls, user_config, config_parser, cal_id):
@@ -417,6 +380,7 @@ class CalendarConfig:
         """
         section = cal_id
         verified = config_parser.getboolean(section, 'verified', fallback=False)
+        enabled = config_parser.getboolean(section, 'enabled', fallback=True)
         return cls(
             vardir=user_config.vardir,
             user_id=user_config.id,
@@ -428,9 +392,12 @@ class CalendarConfig:
             name=config_parser.get(section, 'name', fallback=('Unknown' if verified else 'Unverified')),
             channel_id=config_parser.get(section, 'channel_id'),
             verified=verified,
+            enabled=enabled,
             last_process_at=config_parser.get(section, 'last_process_at', fallback=None),
             last_process_error=config_parser.get(section, 'last_process_error', fallback=None),
-            )
+            last_errors_count=config_parser.getint(section, 'last_errors_count', fallback=0),
+            errors_count_threshold=user_config.errors_count_threshold
+        )
 
     def load_events(self):
         """
@@ -478,6 +445,12 @@ class CalendarConfig:
         config_parser.set(self.id, 'last_process_at', self.last_process_at)
         self.last_process_error = error
         config_parser.set(self.id, 'last_process_error', str(self.last_process_error))
+        if error is None:
+            config_parser.set(self.id, 'last_errors_count', str(0))
+        else:
+            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count + 1))
+            if self.last_errors_count + 1 >= self.errors_count_threshold:
+                config_parser.set(self.id, 'enabled', str(False))
 
     def save_calendar(self, calendar):
         """
