@@ -199,6 +199,23 @@ class Config:
 
         config_file.write(config_parser)
 
+    def enable_calendar(self, user_id, calendar_id, enabled):
+        """
+        Sets enable flag for the calendar
+        :param user_id: id of the user
+        :param calendar_id: id of the calendar
+        :param enabled: enabled flag
+        :return: None
+        """
+        config_file = CalendarsConfigFile(self.vardir, user_id)
+        config_parser = config_file.read_parser()
+        if not config_parser.has_section(calendar_id):
+            raise KeyError('%s not found' % calendar_id)
+
+        config_parser.set(calendar_id, 'enabled', str(enabled))
+
+        config_file.write(config_parser)
+
 
 class UserConfig:
     """
@@ -446,11 +463,16 @@ class CalendarConfig:
         self.last_process_error = error
         config_parser.set(self.id, 'last_process_error', str(self.last_process_error))
         if error is None:
-            config_parser.set(self.id, 'last_errors_count', str(0))
+            self.last_errors_count = 0
+            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
         else:
-            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count + 1))
-            if self.last_errors_count + 1 >= self.errors_count_threshold:
-                config_parser.set(self.id, 'enabled', str(False))
+            self.last_errors_count += 1
+            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
+            if self.last_errors_count >= self.errors_count_threshold:
+                logger.warning('Disabling calendar %s of user %s due %s errors count',
+                               self.id, self.user_id, self.last_errors_count)
+                self.enabled = False
+                config_parser.set(self.id, 'enabled', str(self.enabled))
 
     def save_calendar(self, calendar):
         """

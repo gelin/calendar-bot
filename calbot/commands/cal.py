@@ -46,10 +46,20 @@ def create_handler(config):
     def del_cal_with_config(bot, update, chat_data, job_queue):
         return del_cal(bot, update, chat_data, job_queue, config)
 
+    def enable_cal_with_config(bot, update, chat_data):
+        return enable_cal(bot, update, chat_data, config)
+
+    def disable_cal_with_config(bot, update, chat_data):
+        return disable_cal(bot, update, chat_data, config)
+
     return ConversationHandler(
         entry_points=[RegexHandler(r'^/cal(\d+)', get_cal_with_config, pass_groups=True, pass_chat_data=True)],
         states={
-            EDITING: [CommandHandler('delete', del_cal_with_config, pass_chat_data=True, pass_job_queue=True)],
+            EDITING: [
+                CommandHandler('enable', enable_cal_with_config, pass_chat_data=True),
+                CommandHandler('disable', disable_cal_with_config, pass_chat_data=True),
+                CommandHandler('delete', del_cal_with_config, pass_chat_data=True, pass_job_queue=True),
+            ],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
@@ -69,8 +79,14 @@ def get_cal(bot, update, groups, chat_data, config):
 Name: %s
 URL: %s
 Channel: %s
-Verified: %s''' % (calendar.id, calendar.name, calendar.url, calendar.channel_id, calendar.verified))
-        message.reply_text('/delete it or /cancel')
+Verified: %s
+Enabled: %s
+Last processed: %s
+Last error: %s
+Errors count: %s''' % (calendar.id, calendar.name, calendar.url, calendar.channel_id,
+                       calendar.verified, calendar.enabled,
+                       calendar.last_process_at, calendar.last_process_error, calendar.last_errors_count))
+        message.reply_text(('/disable' if calendar.enabled else '/enable') + ' /delete or /cancel')
         return EDITING
     except Exception as e:
         logger.warning('Failed to load calendar %s for user %s', calendar_id, user_id, exc_info=True)
@@ -98,6 +114,42 @@ def del_cal(bot, update, chat_data, job_queue, config):
         logger.warning('Failed to delete calendar %s for user %s', calendar_id, user_id, exc_info=True)
         try:
             message.reply_text('Failed to delete calendar %s:\n%s' % (calendar_id, e))
+        except Exception:
+            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+
+    return END
+
+
+def enable_cal(bot, update, chat_data, config):
+    message = update.message
+    user_id = str(message.chat_id)
+    calendar_id = chat_data['calendar_id']
+
+    try:
+        config.enable_calendar(user_id, calendar_id, True)
+        message.reply_text('Calendar /cal%s is enabled' % calendar_id)
+    except Exception as e:
+        logger.warning('Failed to enable calendar %s for user %s', calendar_id, user_id, exc_info=True)
+        try:
+            message.reply_text('Failed to enable calendar /cal%s:\n%s' % (calendar_id, e))
+        except Exception:
+            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+
+    return END
+
+
+def disable_cal(bot, update, chat_data, config):
+    message = update.message
+    user_id = str(message.chat_id)
+    calendar_id = chat_data['calendar_id']
+
+    try:
+        config.enable_calendar(user_id, calendar_id, False)
+        message.reply_text('Calendar /cal%s is disabled' % calendar_id)
+    except Exception as e:
+        logger.warning('Failed to disable calendar %s for user %s', calendar_id, user_id, exc_info=True)
+        try:
+            message.reply_text('Failed to disable calendar /cal%s:\n%s' % (calendar_id, e))
         except Exception:
             logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
 
