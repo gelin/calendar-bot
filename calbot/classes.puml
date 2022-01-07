@@ -1,0 +1,88 @@
+@startuml
+
+class Config <<Persist>> {
+  vardir
+  token
+  interval
+  bootstrap_retries
+  errors_count_threshold
+  poll_interval
+  timeout
+  read_latency
+  webhook
+  domain
+  listen
+  port
+}
+
+class UserConfig <<Persist>> {
+    user_id
+    format
+    language
+    advance
+    errors_count_threshold
+}
+
+Config *-- UserConfig
+
+class CalendarConfig <<Persist>> {
+    id
+    user_id^
+    url
+    name
+    channel_id
+    verified
+    enabled
+    format^
+    language^
+    advance^
+    day_start
+    last_process_at
+    last_process_error
+    last_errors_count
+    errors_count_threshold^
+}
+
+UserConfig *-- CalendarConfig
+
+class Calendar <<Runtime>> {
+    url
+    advance
+    day_start
+    name
+    timezone
+    description
+}
+
+CalendarConfig -* Calendar
+
+class EventConfig <<Persist>> {
+    id
+    cal_id
+    user_id
+    last_notified
+}
+
+class Event <<Runtime>> {
+    id
+    uid
+    instance_id
+    title
+    date
+    location
+    description
+    date
+    time
+    notify_datetime
+    repeat_rule
+    exception_dates
+    recurrence_id
+    notified_for_advance
+    day_start
+}
+
+EventConfig -* Event
+
+Calendar *-- "*" Event
+
+@enduml

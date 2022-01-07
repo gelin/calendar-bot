@@ -3,6 +3,7 @@ token = 225478221:AAFvpu4aBjixXmDJKAWVO3wNMjWFpxlkcHY
 vardir = var
 interval = 3600
 bootstrap_retries = -1
+errors_count_threshold = 3
 
 #[polling]
 #poll_interval = 15

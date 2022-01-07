@@ -64,6 +64,9 @@ def update_calendar(bot, config):
     :param config: CalendarConfig instance to persist and update events notification status
     :return: None
     """
+    if not config.enabled:
+        logger.info('Skipping processing of disabled calendar %s of user %s', config.id, config.user_id)
+        return
     try:
         calendar = Calendar(config)
         for event in calendar.events:
@@ -84,10 +87,16 @@ Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
         if not config.verified:
             try:
                 bot.sendMessage(chat_id=config.user_id,
-                                text='Failed to process calendar %s:\n%s' % (config.id, e))
+                                text='Failed to process calendar /cal%s:\n%s' % (config.id, e))
             except Exception:
                 logger.error('Failed to send message to user %s', config.user_id, exc_info=True)
         config.save_error(e)
+        if not config.enabled:
+            try:
+                bot.sendMessage(chat_id=config.user_id,
+                                text='Calendar /cal%s is disabled due too many processing errors\n' % config.id)
+            except Exception:
+                logger.error('Failed to send message to user %s', config.user_id, exc_info=True)
 
 
 def send_event(bot, config, event):

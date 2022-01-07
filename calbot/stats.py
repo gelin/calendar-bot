@@ -31,6 +31,7 @@ logger = logging.getLogger('stats')
 
 STATS_MESSAGE_FORMAT="""Active users: {}
 Active calendars: {}
+Disabled calendars: {}
 Notified events: {}
 Last calendars processed:
 {} - {}"""
@@ -49,6 +50,7 @@ def update_stats(config):
 
         users = 0
         calendars = 0
+        disabled_calendars = 0
         events = 0
         last_process_min = datetime.datetime.utcnow().isoformat()
         last_process_max = datetime.datetime.utcfromtimestamp(0).isoformat()
@@ -58,14 +60,18 @@ def update_stats(config):
                 users += 1
                 user_id = name
                 for calendar in config.load_calendars(user_id):
-                    calendars += 1
-                    last_process_min = min(calendar.last_process_at or last_process_min, last_process_min)
-                    last_process_max = max(calendar.last_process_at or last_process_max, last_process_max)
-                    calendar.load_events()
-                    events += len(calendar.events)
+                    if calendar.enabled:
+                        calendars += 1
+                        last_process_min = min(calendar.last_process_at or last_process_min, last_process_min)
+                        last_process_max = max(calendar.last_process_at or last_process_max, last_process_max)
+                        calendar.load_events()
+                        events += len(calendar.events)
+                    else:
+                        disabled_calendars += 1
 
         parser.set('stats', 'users', str(users))
         parser.set('stats', 'calendars', str(calendars))
+        parser.set('stats', 'disabled_calendars', str(disabled_calendars))
         parser.set('stats', 'events', str(events))
         parser.set('stats', 'last_process_min', last_process_min)
         parser.set('stats', 'last_process_max', last_process_max)
@@ -94,7 +100,9 @@ class Stats:
         self.users = kwargs['users']
         """Number of active users"""
         self.calendars = kwargs['calendars']
-        """Number of active calendar"""
+        """Number of active calendars"""
+        self.disabled_calendars = kwargs['disabled_calendars']
+        """Number of disabled calendars"""
         self.events = kwargs['events']
         """Number of notified events"""
         self.last_process_min = kwargs['last_process_min']
@@ -111,6 +119,7 @@ class Stats:
         return cls(
             users=parser.getint('stats', 'users', fallback=0),
             calendars=parser.getint('stats', 'calendars', fallback=0),
+            disabled_calendars=parser.getint('stats', 'disabled_calendars', fallback=0),
             events=parser.getint('stats', 'events', fallback=0),
             last_process_min=parser.get('stats', 'last_process_min', fallback=None),
             last_process_max=parser.get('stats', 'last_process_max', fallback=None)
@@ -119,6 +128,7 @@ class Stats:
     def __str__(self):
         return STATS_MESSAGE_FORMAT.format(self.users,
                                            self.calendars,
+                                           self.disabled_calendars,
                                            self.events,
                                            self.last_process_min,
                                            self.last_process_max)

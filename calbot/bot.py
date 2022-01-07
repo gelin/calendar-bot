@@ -128,7 +128,8 @@ def list_calendars(bot, update, config):
     user_id = str(message.chat_id)
     text = 'ID\tNAME\tCHANNEL\n'
     for calendar in config.user_calendars(user_id):
-        text += '/cal%s\t%s\t%s\n' % (calendar.id, calendar.name, calendar.channel_id)
+        text += '/cal%s\t%s\t%s%s\n' % (calendar.id, calendar.name, calendar.channel_id,
+                                        ('' if calendar.enabled else '\tDISABLED'))
     bot.sendMessage(chat_id=user_id, text=text)
 
 
@@ -163,7 +164,7 @@ def unknown(bot, update):
     :param update: Update instance
     :return: None
     """
-    bot.sendMessage(chat_id=update.message.chat_id, text="Sorry, I don't understand that command.")
+    bot.sendMessage(chat_id=update.message.chat_id, text="Sorry, I don't understand this command.")
 
 
 def error(bot, update, error):
