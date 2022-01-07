@@ -67,11 +67,15 @@ Name: My Google Calendar
 URL: https://calendar.google.com/calendar/ical/XXXXXXXXXXXXXX/public/basic.ics
 Channel: @mychannel
 Verified: True
+Enabled: True
+Last processed: 2022-01-07T11:55:09.762176
+Last error: None
+Errors count: 0
 
-/delete it or /cancel
+/disable /delete or /cancel
 ```
 
-Then you can delete this calendar by selecting /delete command.
+Then you can `/enable` or `/disable` the calendar or `/delete` it permanently by executing the specific command.
 
 ### /format
 
