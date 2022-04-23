@@ -451,29 +451,6 @@ class CalendarConfig:
         config_event = self.event(event.id)
         config_event.last_notified = event.notified_for_advance
 
-    def _create_section(self, config_parser):
-        if not config_parser.has_section(self.id):
-            config_parser.add_section(self.id)
-            config_parser.set(self.id, 'url', self.url)
-            config_parser.set(self.id, 'channel_id', self.channel_id)
-
-    def _update_last_process(self, config_parser, error=None):
-        self.last_process_at = datetime.utcnow().isoformat()
-        config_parser.set(self.id, 'last_process_at', self.last_process_at)
-        self.last_process_error = error
-        config_parser.set(self.id, 'last_process_error', str(self.last_process_error))
-        if error is None:
-            self.last_errors_count = 0
-            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
-        else:
-            self.last_errors_count += 1
-            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
-            if self.last_errors_count >= self.errors_count_threshold:
-                logger.warning('Disabling calendar %s of user %s due %s errors count',
-                               self.id, self.user_id, self.last_errors_count)
-                self.enabled = False
-                config_parser.set(self.id, 'enabled', str(self.enabled))
-
     def save_calendar(self, calendar):
         """
         Saves the calendar as verified and persisted
@@ -517,6 +494,29 @@ class CalendarConfig:
         self._create_section(config_parser)
         self._update_last_process(config_parser, exception)
         config_file.write(config_parser)
+
+    def _create_section(self, config_parser):
+        if not config_parser.has_section(self.id):
+            config_parser.add_section(self.id)
+            config_parser.set(self.id, 'url', self.url)
+            config_parser.set(self.id, 'channel_id', self.channel_id)
+
+    def _update_last_process(self, config_parser, error=None):
+        self.last_process_at = datetime.utcnow().isoformat()
+        config_parser.set(self.id, 'last_process_at', self.last_process_at)
+        self.last_process_error = error
+        config_parser.set(self.id, 'last_process_error', str(self.last_process_error))
+        if error is None:
+            self.last_errors_count = 0
+            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
+        else:
+            self.last_errors_count += 1
+            config_parser.set(self.id, 'last_errors_count', str(self.last_errors_count))
+            if self.last_errors_count >= self.errors_count_threshold:
+                logger.warning('Disabling calendar %s of user %s due %s errors count',
+                               self.id, self.user_id, self.last_errors_count)
+                self.enabled = False
+                config_parser.set(self.id, 'enabled', str(self.enabled))
 
 
 class EventConfig:

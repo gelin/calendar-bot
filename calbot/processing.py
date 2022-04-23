@@ -67,12 +67,15 @@ def update_calendar(bot, config):
     if not config.enabled:
         logger.info('Skipping processing of disabled calendar %s of user %s', config.id, config.user_id)
         return
+
     try:
         calendar = Calendar(config)
+
         for event in calendar.events:
             send_event(bot, config, event)
             config.event_notified(event)
         config.save_events()
+
         if not config.verified:
             bot.sendMessage(chat_id=config.channel_id,
                             text='Events from %s will be notified here' % calendar.name)
@@ -82,16 +85,21 @@ def update_calendar(bot, config):
 Name: %s
 URL: %s
 Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
+
+        config.save_error(None)     # successful processing completion
     except Exception as e:
         logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
-        if not config.verified:
+        was_enabled = config.enabled
+        config.save_error(e)        # unsuccessful completion
+
+        if config.enabled and not config.verified:  # still enabled
             try:
                 bot.sendMessage(chat_id=config.user_id,
                                 text='Failed to process calendar /cal%s:\n%s' % (config.id, e))
             except Exception:
                 logger.error('Failed to send message to user %s', config.user_id, exc_info=True)
-        config.save_error(e)
-        if not config.enabled:
+
+        if was_enabled and not config.enabled:      # just disabled
             try:
                 bot.sendMessage(chat_id=config.user_id,
                                 text='Calendar /cal%s is disabled due too many processing errors\n' % config.id)
