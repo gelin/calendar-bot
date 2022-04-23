@@ -62,22 +62,24 @@ def create_handler(config):
     def edit_cal_url_with_config(bot, update, chat_data):
         return edit_cal_url(bot, update, chat_data, config)
 
-    # def edit_cal_channel_with_config(bot, update, chat_data):
-    #     return edit_cal_channel(bot, update, chat_data, config)
+    def start_edit_cal_channel_with_config(bot, update, chat_data):
+        return start_edit_cal_channel(bot, update, chat_data, config)
+
+    def edit_cal_channel_with_config(bot, update, chat_data):
+        return edit_cal_channel(bot, update, chat_data, config)
 
     return ConversationHandler(
         entry_points=[RegexHandler(r'^/cal(\d+)', get_cal_with_config, pass_groups=True, pass_chat_data=True)],
         states={
             EDITING: [
                 CommandHandler('url', start_edit_cal_url_with_config, pass_chat_data=True),
-                # CommandHandler('channel', edit_cal_channel_with_config, pass_chat_data=True),
+                CommandHandler('channel', start_edit_cal_channel_with_config, pass_chat_data=True),
                 CommandHandler('enable', enable_cal_with_config, pass_chat_data=True),
                 CommandHandler('disable', disable_cal_with_config, pass_chat_data=True),
                 CommandHandler('delete', del_cal_with_config, pass_chat_data=True, pass_job_queue=True),
             ],
             EDITING_URL: [MessageHandler(Filters.text, edit_cal_url_with_config, pass_chat_data=True)],
-            # EDITING_CHANNEL: [MessageHandler(
-            #     Filters.text, add_calendar_with_config, pass_chat_data=True)],
+            EDITING_CHANNEL: [MessageHandler(Filters.text, edit_cal_channel_with_config, pass_chat_data=True)],
         },
         fallbacks=[CommandHandler('cancel', cancel)],
         allow_reentry=True
@@ -104,7 +106,7 @@ Last error: %s
 Errors count: %s''' % (calendar.id, calendar.name, calendar.url, calendar.channel_id,
                        calendar.verified, calendar.enabled,
                        calendar.last_process_at, calendar.last_process_error, calendar.last_errors_count))
-        message.reply_text('Edit the calendar /url, or %s it, or /delete, or /cancel' %
+        message.reply_text('Edit the calendar /url or /channel, or %s it, or /delete, or /cancel' %
                            ('/disable' if calendar.enabled else '/enable'))
         return EDITING
     except Exception as e:
@@ -175,22 +177,40 @@ def edit_cal_url(bot, update, chat_data, config):
     return END
 
 
-# def edit_cal_channel(bot, update, chat_data, config):
-#     message = update.message
-#     user_id = str(message.chat_id)
-#     calendar_id = chat_data['calendar_id']
-#
-#     try:
-#         config.enable_calendar(user_id, calendar_id, True)
-#         message.reply_text('Calendar /cal%s is enabled' % calendar_id)
-#     except Exception as e:
-#         logger.warning('Failed to enable calendar %s for user %s', calendar_id, user_id, exc_info=True)
-#         try:
-#             message.reply_text('Failed to enable calendar /cal%s:\n%s' % (calendar_id, e))
-#         except Exception:
-#             logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
-#
-#     return END
+def start_edit_cal_channel(bot, update, chat_data, config):
+    message = update.message
+    user_id = str(message.chat_id)
+    calendar_id = chat_data['calendar_id']
+
+    try:
+        calendar = config.load_calendar(user_id, calendar_id)
+        message.reply_text("The current calendar channel is:")
+        message.reply_text(calendar.channel_id)
+        message.reply_text("Enter a new channel name or /cancel")
+        return EDITING_CHANNEL
+    except Exception:
+        logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+        return END
+
+
+def edit_cal_channel(bot, update, chat_data, config):
+    message = update.message
+    user_id = str(message.chat_id)
+    calendar_id = chat_data['calendar_id']
+
+    try:
+        channel_id = message.text.strip()
+        calendar = config.change_calendar_channel(user_id, calendar_id, channel_id)
+        message.reply_text('The updated calendar is queued for verification.\nWait for messages here.')
+        update_calendar(bot, calendar)
+    except Exception as e:
+        logger.warning('Failed to change channel of calendar %s for user %s', calendar_id, user_id, exc_info=True)
+        try:
+            message.reply_text('Failed to change channel of calendar %s:\n%s' % (calendar_id, e))
+        except Exception:
+            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+
+    return END
 
 
 def enable_cal(bot, update, chat_data, config):

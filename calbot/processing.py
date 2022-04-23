@@ -91,7 +91,7 @@ Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
         was_enabled = config.enabled
         config.save_error(e)  # unsuccessful completion
 
-        if config.enabled and not config.verified:  # still enabled
+        if was_enabled and not config.verified:  # still enabled
             try:
                 bot.sendMessage(chat_id=config.user_id,
                                 text='Failed to process calendar /cal%s:\n%s' % (config.id, e))

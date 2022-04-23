@@ -188,11 +188,26 @@ class Config:
         Updates the calendar url. Resets verified flag.
         :param user_id: id of the user
         :param calendar_id: id of the calendar
-        :param url: URL of the ical file
+        :param url: new URL of the ical file
         :return: updated CalendarConfig instance
         """
         calendar = self.load_calendar(user_id, calendar_id)
         calendar.url = url
+        calendar.verified = False
+        calendar.enabled = True
+        calendar.save()     # save and clear last error
+        return calendar
+
+    def change_calendar_channel(self, user_id, calendar_id, channel_id):
+        """
+        Updates the calendar channel. Resets verified flag.
+        :param user_id: id of the user
+        :param calendar_id: id of the calendar
+        :param channel_id: new channel ID
+        :return: updated CalendarConfig instance
+        """
+        calendar = self.load_calendar(user_id, calendar_id)
+        calendar.channel_id = channel_id
         calendar.verified = False
         calendar.enabled = True
         calendar.save()     # save and clear last error
