@@ -2,7 +2,7 @@
 
 It's the bot for [Telegram](https://telegram.org/).
 
-It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) files of Google Calendar.
+It reads [iCalendar](https://en.wikipedia.org/wiki/ICalendar) files of Google Calendar (or any other public iCal URLs).
 And sends notifications to a [telegram channel](https://telegram.org/faq_channels) some hours in advance to the events start in the calendar.
 Use it to mirror calendar events to the channel and notify the subscribers.
 
@@ -25,7 +25,7 @@ Adds the new calendar to be processed by the bot and be broadcasted to the chann
 You should enter two parameters after prompts, one by one:
 
 * URL of the iCalendar file. Can look like `https://calendar.google.com/calendar/ical/many_many_characters/public/basic.ics`
-* Name of the channel where to broadcast calendar events, starts from `@`
+* Name of the channel where to broadcast calendar events, starting from `@`
 
 For example:
 
@@ -55,10 +55,10 @@ ID    NAME               CHANNEL
 
 ### /calN
 
-`/cal<ID>` — see calendar details, delete it if necessary
+`/cal<ID>` — see calendar details, edit, disable, or delete it if necessary
 
 Show details of the specified calendar from the list.
-Allows to delete it.
+Allows to modify, disable, or delete it.
 For example:
 
 ```
@@ -72,14 +72,38 @@ Last processed: 2022-01-07T11:55:09.762176
 Last error: None
 Errors count: 0
 
-/disable /delete or /cancel
+Edit the calendar /url or /channel, or /disable it, or /delete, or /cancel
 ```
 
-Then you can `/enable` or `/disable` the calendar or `/delete` it permanently by executing the specific command.
+You can type `/url` and enter a new URL to the iCal file after the prompt.
+For example:
+
+```
+The current calendar URL is:
+
+https://calendar.google.com/calendar/ical/XXXXXXXXXXXXXX/public/basic.ics
+
+Enter a new URL of iCal file or /cancel
+```
+
+You can type `/channel` and, after the prompt, enter a new channel name where to send the calendar event.
+For example:
+
+```
+The current calendar channel is:
+
+@mychannel
+
+Enter a new channel name or /cancel
+```
+
+After changing of the URL or channel name the calendar is verified again, as it happens when adding a new calendar.
+
+You can `/enable` or `/disable` the calendar or `/delete` it permanently by typing the specific command.
 
 ### /format
 
-`/format` — get and set a calendar event formatting, use {title}, {date}, {time}, {location} and {description} variables
+`/format` — get and set a calendar event formatting, use `{title}`, `{date}`, `{time}`, `{location}` and `{description}` variables
 
 The command prints the current format of the calendar event and asks the new format to set.
 For example:
@@ -102,7 +126,7 @@ The sample event is to demonstrate how the event can be formatted
 Type a new format string to set or /cancel
 ```
 
-Enter the format message to set this text as the new event format.
+Type the new format template and send it.
 See below the details of the formatting.
  
 ### /lang 
@@ -115,6 +139,7 @@ For example:
 ```
 Current language: ru_RU.UTF-8
 Sample event:
+
 This is sample event
 Пятница, 23 Сентябрь 2016, 18:03 UTC
 It happens in Milky Way
