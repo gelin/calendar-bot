@@ -61,22 +61,23 @@ def create_handler(config):
 def get_advance(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    text = 'Events are notified %s hours in advance.\nType another numbers to change or /cancel\n' % (
-        ', '.join(map(str, user_config.advance)),
-    )
-    message.reply_text(text)
-    return SETTING
+    try:
+        user_config = config.load_user(user_id)
+        text = 'Events are notified %s hours in advance.\nType another numbers to change or /cancel\n' % (
+            ', '.join(map(str, user_config.advance)),
+        )
+        message.reply_text(text)
+        return SETTING
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
+        return END
 
 
 def set_advance(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    hours = message.text.strip()
     try:
+        user_config = config.load_user(user_id)
         hours = message.text.split()
         user_config.set_advance(hours)
         text = 'Advance hours are updated.\nEvents will be notified %s hours in advance.' % (
@@ -85,7 +86,7 @@ def set_advance(bot, update, config):
         message.reply_text(text)
         return END
     except Exception as e:
-        logger.warning('Failed to update advance to "%s" for user %s', str(hours), user_id, exc_info=True)
+        logger.warning('Failed to update advance to for user %s', user_id, exc_info=True)
         text = 'Failed to update advance hours:\n%s' % e
         try:
             message.reply_text(text)
@@ -98,10 +99,12 @@ def set_advance(bot, update, config):
 def cancel(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    text = 'Cancelled.\nEvents will be notified %s hours in advance.' % (
-        ', '.join(map(str, user_config.advance)),
-    )
-    message.reply_text(text)
+    try:
+        user_config = config.load_user(user_id)
+        text = 'Cancelled.\nEvents will be notified %s hours in advance.' % (
+            ', '.join(map(str, user_config.advance)),
+        )
+        message.reply_text(text)
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
     return END

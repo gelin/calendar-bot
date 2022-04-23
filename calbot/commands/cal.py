@@ -136,7 +136,7 @@ def del_cal(bot, update, chat_data, job_queue, config):
         try:
             message.reply_text('Failed to delete calendar %s:\n%s' % (calendar_id, e))
         except Exception:
-            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
@@ -153,7 +153,7 @@ def start_edit_cal_url(bot, update, chat_data, config):
         message.reply_text("Enter a new URL of iCal file or /cancel")
         return EDITING_URL
     except Exception:
-        logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
         return END
 
 
@@ -172,7 +172,7 @@ def edit_cal_url(bot, update, chat_data, config):
         try:
             message.reply_text('Failed to change url of calendar %s:\n%s' % (calendar_id, e))
         except Exception:
-            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
@@ -189,7 +189,7 @@ def start_edit_cal_channel(bot, update, chat_data, config):
         message.reply_text("Enter a new channel name or /cancel")
         return EDITING_CHANNEL
     except Exception:
-        logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
         return END
 
 
@@ -208,7 +208,7 @@ def edit_cal_channel(bot, update, chat_data, config):
         try:
             message.reply_text('Failed to change channel of calendar %s:\n%s' % (calendar_id, e))
         except Exception:
-            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
@@ -226,7 +226,7 @@ def enable_cal(bot, update, chat_data, config):
         try:
             message.reply_text('Failed to enable calendar /cal%s:\n%s' % (calendar_id, e))
         except Exception:
-            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
@@ -244,12 +244,16 @@ def disable_cal(bot, update, chat_data, config):
         try:
             message.reply_text('Failed to disable calendar /cal%s:\n%s' % (calendar_id, e))
         except Exception:
-            logger.warning('Failed to send reply to user %s', user_id, exc_info=True)
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
 
     return END
 
 
 def cancel(bot, update):
     message = update.message
-    message.reply_text('Cancelled.')
+    user_id = str(message.chat_id)
+    try:
+        message.reply_text('Cancelled.')
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
     return END
