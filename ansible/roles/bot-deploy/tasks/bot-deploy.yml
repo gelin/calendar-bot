@@ -5,12 +5,20 @@
     src: '../{{ item }}'
     dest: '{{ bot_basedir }}/{{ item }}'
     owner: '{{ bot_user }}'
+    group: '{{ bot_user }}'
   notify: restart bot
   with_items:
     - 'calbot.py'
     - 'requirements.txt'
     - 'COPYING'
-    - 'calbot/'
+
+- name: copy bot files
+  synchronize:
+    src: '../calbot/'
+    dest: '{{ bot_basedir }}/calbot/'
+    rsync_opts:
+      - '--chown={{ bot_user }}:{{ bot_user }}'
+  notify: restart bot
 
 - name: install dependencies
   pip:
