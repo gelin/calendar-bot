@@ -23,7 +23,6 @@ from calbot.formatting import format_event
 from calbot.ical import Calendar
 from calbot.stats import update_stats
 
-
 __all__ = ['update_calendars_job', 'update_calendars', 'update_calendar']
 
 logger = logging.getLogger('processing')
@@ -71,26 +70,26 @@ def update_calendar(bot, config):
     try:
         calendar = Calendar(config)
 
-        for event in calendar.events:
-            send_event(bot, config, event)
-            config.event_notified(event)
-        config.save_events()
-
         if not config.verified:
             bot.sendMessage(chat_id=config.channel_id,
                             text='Events from %s will be notified here' % calendar.name)
             config.save_calendar(calendar)
             bot.sendMessage(chat_id=config.user_id,
-                            text='''Added calendar %s
+                            text='''Verified calendar %s
 Name: %s
 URL: %s
 Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
 
-        config.save_error(None)     # successful processing completion
+        for event in calendar.events:
+            send_event(bot, config, event)
+            config.event_notified(event)
+            config.save_events()
+
+        config.save_error(None)  # successful processing completion
     except Exception as e:
         logger.warning('Failed to process calendar %s of user %s', config.id, config.user_id, exc_info=True)
         was_enabled = config.enabled
-        config.save_error(e)        # unsuccessful completion
+        config.save_error(e)  # unsuccessful completion
 
         if config.enabled and not config.verified:  # still enabled
             try:
@@ -99,7 +98,7 @@ Channel: %s''' % (config.id, config.name, config.url, config.channel_id))
             except Exception:
                 logger.error('Failed to send message to user %s', config.user_id, exc_info=True)
 
-        if was_enabled and not config.enabled:      # just disabled
+        if was_enabled and not config.enabled:  # just disabled
             try:
                 bot.sendMessage(chat_id=config.user_id,
                                 text='Calendar /cal%s is disabled due too many processing errors\n' % config.id)

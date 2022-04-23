@@ -55,6 +55,7 @@ def create_handler(config):
         allow_reentry=True
     )
 
+# TODO: add try-catch around all reply_text
 
 def start(bot, update):
     message = update.message
