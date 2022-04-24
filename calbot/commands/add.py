@@ -58,34 +58,51 @@ def create_handler(config):
 
 def start(bot, update):
     message = update.message
-    message.reply_text("You're going to add a new calendar.\nEnter an URL of iCal file or /cancel")
-    return ENTERING_URL
+    user_id = str(message.chat_id)
+    try:
+        message.reply_text("You're going to add a new calendar.\nEnter an URL of iCal file or /cancel")
+        return ENTERING_URL
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
+        return END
 
 
 def enter_url(bot, update, chat_data):
     message = update.message
-    chat_data['calendar_url'] = message.text.strip()
-    message.reply_text('Enter a channel name or /cancel')
-    return ENTERING_CHANNEL
+    user_id = str(message.chat_id)
+    try:
+        chat_data['calendar_url'] = message.text.strip()
+        message.reply_text('Enter a channel name or /cancel')
+        return ENTERING_CHANNEL
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
+        return END
 
 
 def add_calendar(bot, update, chat_data, config):
     message = update.message
     user_id = str(message.chat_id)
     url = chat_data['calendar_url']
-    channel_id = message.text.strip()
-
-    calendar = config.add_calendar(user_id, url, channel_id)
-
-    message.reply_text(
-        'The new calendar is queued for verification.\nWait for messages here and in the %s.' % channel_id)
-
-    update_calendar(bot, calendar)
-
+    try:
+        channel_id = message.text.strip()
+        calendar = config.add_calendar(user_id, url, channel_id)
+        message.reply_text(
+            'The new calendar is queued for verification.\nWait for messages here and in the %s.' % channel_id)
+        update_calendar(bot, calendar)
+    except Exception as e:
+        logger.warning('Failed to add calendar for user %s', user_id, exc_info=True)
+        try:
+            message.reply_text('Failed to add calendar:\n%s' % e)
+        except Exception:
+            logger.error('Failed to send reply to user %s', user_id, exc_info=True)
     return END
 
 
 def cancel(bot, update):
     message = update.message
-    message.reply_text('Cancelled.')
+    user_id = str(message.chat_id)
+    try:
+        message.reply_text('Cancelled.')
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
     return END

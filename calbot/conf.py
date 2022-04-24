@@ -183,6 +183,36 @@ class Config:
 
         return calendar
 
+    def change_calendar_url(self, user_id, calendar_id, url):
+        """
+        Updates the calendar url. Resets verified flag.
+        :param user_id: id of the user
+        :param calendar_id: id of the calendar
+        :param url: new URL of the ical file
+        :return: updated CalendarConfig instance
+        """
+        calendar = self.load_calendar(user_id, calendar_id)
+        calendar.url = url
+        calendar.verified = False
+        calendar.enabled = True
+        calendar.save()     # save and clear last error
+        return calendar
+
+    def change_calendar_channel(self, user_id, calendar_id, channel_id):
+        """
+        Updates the calendar channel. Resets verified flag.
+        :param user_id: id of the user
+        :param calendar_id: id of the calendar
+        :param channel_id: new channel ID
+        :return: updated CalendarConfig instance
+        """
+        calendar = self.load_calendar(user_id, calendar_id)
+        calendar.channel_id = channel_id
+        calendar.verified = False
+        calendar.enabled = True
+        calendar.save()     # save and clear last error
+        return calendar
+
     def delete_calendar(self, user_id, calendar_id):
         """
         Deleted the calendar from the persisted list
@@ -416,6 +446,26 @@ class CalendarConfig:
             errors_count_threshold=user_config.errors_count_threshold
         )
 
+    def save(self, exception=None):
+        """
+        Saves changes in url, name, channel_id, verified and enabled flags
+        of the calendar, updates last error.
+        :param exception: exception, can be None
+        :return: None
+        """
+        config_file = CalendarsConfigFile(self.vardir, self.user_id)
+        config_parser = config_file.read_parser()
+        self._create_section(config_parser)
+
+        config_parser.set(self.id, 'url', self.url)
+        config_parser.set(self.id, 'name', self.name)
+        config_parser.set(self.id, 'channel_id', self.channel_id)
+        config_parser.set(self.id, 'verified', str(self.verified))
+        config_parser.set(self.id, 'enabled', str(self.enabled))
+
+        self._update_last_process(config_parser, exception)
+        config_file.write(config_parser)
+
     def load_events(self):
         """
         Loads the calendar events from the events.cfg file.
@@ -489,6 +539,11 @@ class CalendarConfig:
         self.save_error(None)
 
     def save_error(self, exception):
+        """
+        Saves the last error
+        :param exception: exception, can be None
+        :return: None
+        """
         config_file = CalendarsConfigFile(self.vardir, self.user_id)
         config_parser = config_file.read_parser()
         self._create_section(config_parser)

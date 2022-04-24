@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Calendar Bot.  If not, see http://www.gnu.org/licenses/.
 
-import locale
 import logging
 
 from telegram.ext import ConversationHandler
@@ -25,7 +24,7 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
-from calbot.formatting import normalize_locale, format_event
+from calbot.formatting import format_event
 from calbot.ical import sample_event
 
 
@@ -65,23 +64,25 @@ def create_handler(config):
 def get_format(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    message.reply_text('Current format:')
-    message.reply_text(user_config.format)
-    message.reply_text('Sample event:')
-    message.reply_text(format_event(user_config, sample_event))
-    message.reply_text('Type a new format string to set or /cancel')
-    return SETTING
+    try:
+        user_config = config.load_user(user_id)
+        message.reply_text('Current format:')
+        message.reply_text(user_config.format)
+        message.reply_text('Sample event:')
+        message.reply_text(format_event(user_config, sample_event))
+        message.reply_text('Type a new format string to set or /cancel')
+        return SETTING
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
+        return END
 
 
 def set_format(bot, update, config):
     message = update.message or update.edited_message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    new_format = message.text.strip()
     try:
+        user_config = config.load_user(user_id)
+        new_format = message.text.strip()
         user_config.set_format(new_format)
         message.reply_text('Format is updated.\nSample event:')
         message.reply_text(format_event(user_config, sample_event))
@@ -99,8 +100,10 @@ def set_format(bot, update, config):
 def cancel(bot, update, config):
     message = update.message
     user_id = str(message.chat_id)
-    user_config = config.load_user(user_id)
-
-    message.reply_text('Cancelled.\nCurrent format:')
-    message.reply_text(user_config.format)
+    try:
+        user_config = config.load_user(user_id)
+        message.reply_text('Cancelled.\nCurrent format:')
+        message.reply_text(user_config.format)
+    except Exception:
+        logger.error('Failed to send reply to user %s', user_id, exc_info=True)
     return END
