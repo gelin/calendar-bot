@@ -24,7 +24,6 @@ from telegram.ext import CommandHandler
 from telegram.ext import MessageHandler
 from telegram.ext import Filters
 
-
 __all__ = ['create_handler']
 
 logger = logging.getLogger('commands.advance')
@@ -63,9 +62,11 @@ def get_advance(bot, update, config):
     user_id = str(message.chat_id)
     try:
         user_config = config.load_user(user_id)
-        text = 'Events are notified %s hours in advance.\nType another numbers to change or /cancel\n' % (
-            ', '.join(map(str, user_config.advance)),
-        )
+        text = 'Events are notified %s hours in advance.\n\nType how many hours in advance events should be notified. ' \
+               'Several intervals can be entered separated by space.\n\nExample:\n48 24 12 6\n\nEnter /cancel to ' \
+               'cancel update.' % (
+                   ', '.join(map(str, user_config.advance)),
+               )
         message.reply_text(text)
         return SETTING
     except Exception:

@@ -23,6 +23,7 @@ from datetime import datetime, date, timedelta
 from urllib.request import urlopen
 import pytz
 import icalendar
+import recurring_ical_events
 from dateutil import rrule
 
 from calbot.formatting import BlankFormat
@@ -58,8 +59,7 @@ class Calendar:
         self.all_events = list(self.read_ical(self.url, after, before))
         """list of all calendar events, from ical file"""
 
-        future_events = filter_future_events(self.all_events, after, before)
-        unnotified_events = filter_notified_events(future_events, config)
+        unnotified_events = filter_notified_events(self.all_events, config)
         sorted_events = sort_events(unnotified_events)
 
         self.events = list(sorted_events)
@@ -77,8 +77,6 @@ class Calendar:
         logger.info('Getting %s', url)
         with urlopen(url) as f:
             timezone_set = 'none'
-            explicit_events = set()
-
             vcalendar = icalendar.Calendar.from_ical(f.read())
             self.name = str(vcalendar.get('X-WR-CALNAME'))
             self.description = str(vcalendar.get('X-WR-CALDESC'))
@@ -95,16 +93,8 @@ class Calendar:
                     except Exception as e:
                         logger.warning(e)
 
-                elif component.name == 'VEVENT':
-                    event = Event.from_vevent(component, self.timezone, self.day_start)
-                    explicit_events.add(event.instance_id)
-                    yield event
-                    try:
-                        for repeat in event.repeat_between(after, before, explicit_events):
-                            yield repeat
-                    except:
-                        logger.warning('Failed to repeat %s at %s %s',
-                            event.id, str(event.date), str(event.time), exc_info=True)
+            for event in recurring_ical_events.of(vcalendar).between(after, before):
+                yield Event.from_vevent(event, self.timezone, self.day_start)
 
 
 class Event:
@@ -318,8 +308,8 @@ def filter_future_events(events, after, before):
     :return: it's generator, yields each filtered event
     """
     for event in events:
-        if after < event.notify_datetime <= before:
-            yield event
+        # if after < event.notify_datetime <= before:
+        yield event
 
 
 def filter_notified_events(events, config):
