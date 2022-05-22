@@ -190,7 +190,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'summary\n'
-            'четверг, 23 июня 2016, 19:50 UTC\n'
+            'Четверг, 23 июня 2016, 19:50 UTC\n'
             'location\n'
             'description',
             result)
@@ -371,7 +371,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'summary\n'
-            'суббота, 03 февраля 2018, 13:03 UTC\n'
+            'Суббота, 03 февраля 2018, 13:03 UTC\n'
             'location\n'
             'description'
             '\n'
@@ -387,7 +387,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'None\n'
-            'суббота, 03 февраля 2018, 13:03 UTC\n'
+            'Суббота, 03 февраля 2018, 13:03 UTC\n'
             'None\n'
             'None',
             result)
@@ -421,7 +421,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
             ' в офисе 7bits (https://vk.com/7bits), Таубе 5. '
@@ -447,7 +447,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
             ' в офисе 7bits (https://vk.com/7bits), Таубе 5.'
@@ -470,7 +470,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
             ' в офисе 7bits (https://vk.com/7bits), Таубе 5.'
@@ -494,7 +494,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\n10 февраля в 11:00 пройдет 5-я встреча ML клуба (https://vk.com/mlomsk)'
             ' в офисе 7bits (https://vk.com/7bits), Таубе 5.\n'
@@ -522,7 +522,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\nВсем привет!\n'
             '\nСписок:\n'
@@ -554,7 +554,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\nВсем привет!\n'
             '\nСписок:'
@@ -591,7 +591,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\nВсем привет!\n'
             '\nСписок:\n'
@@ -625,7 +625,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\nВсем привет!\n'
             '\nСписок:\n'
@@ -657,7 +657,7 @@ class CalbotTestCase(unittest.TestCase):
         result = format_event(user_config, event)
         self.assertEqual(
             'Встреча ML-клуба\n'
-            'суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
+            'Суббота, 10 февраля 2018, 11:00 Asia/Omsk\n'
             'ул. Таубе, 5, Омск, Омская обл., Россия, 644037\n'
             '\nМайский IT-субботник доверяем Gems Development!\n '
             '\nРебята подготовят митап для разработчиков.\n'
