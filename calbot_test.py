@@ -29,7 +29,7 @@ from icalendar.cal import Component
 
 from calbot.formatting import normalize_locale, format_event, strip_tags
 from calbot.conf import CalendarConfig, Config, UserConfig, UserConfigFile, DEFAULT_FORMAT, CalendarsConfigFile
-from calbot.ical import Event, Calendar, filter_future_events, filter_notified_events, sort_events
+from calbot.ical import Event, Calendar, filter_notified_events, sort_events
 from calbot.stats import update_stats, get_stats
 
 
@@ -57,51 +57,42 @@ class CalbotTestCase(unittest.TestCase):
             result)
 
     # TODO: fix event time assertion
-    @unittest.skip("invalid for now, need to fix event time assertion")
     def test_read_calendar(self):
         config = CalendarConfig.new(
             UserConfig.new(Config('calbot.cfg.sample'), 'TEST'),
             '1', 'file://{}/test/test.ics'.format(os.path.dirname(__file__)), 'TEST')
+
         calendar = Calendar(config)
         self.assertEqual(pytz.timezone('Asia/Omsk'), calendar.timezone)
         self.assertEqual('Тест', calendar.name)
         self.assertEqual('Just a test calendar', calendar.description)
+
+        for e in calendar.all_events:
+            print(e)
+        self.assertEqual(2, len(calendar.all_events))
+        # events in the past are skipped, daily event is repeated for 48 hours to future
+
+        # event in the past, skipped
+        # event = calendar.all_events[0]
+        # self.assertEqual(datetime.date(2016, 6, 24), event.date)
+        # self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        # self.assertEqual('Событие по-русски', event.title)
+
+        # event in the past, skipped
+        # event = calendar.all_events[1]
+        # self.assertEqual(datetime.date(2016, 6, 23), event.date)
+        # self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        # self.assertEqual('Event title', event.title)
+
+        today = datetime.date.today()
         event = calendar.all_events[0]
-        self.assertEqual(datetime.date(2016, 6, 24), event.date)
-        self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
-        self.assertEqual('Событие по-русски', event.title)
+        self.assertEqual(today + datetime.timedelta(days=1), event.date)
+        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
+        self.assertEqual('Daily event', event.title)
         event = calendar.all_events[1]
-        self.assertEqual(datetime.date(2016, 6, 23), event.date)
-        self.assertEqual(datetime.time(6, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
-        self.assertEqual('Event title', event.title)
-        event = calendar.all_events[2]
-        self.assertEqual(datetime.date(2017, 1, 4), event.date)
+        self.assertTrue(today + datetime.timedelta(days=2), event.date)
         self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
         self.assertEqual('Daily event', event.title)
-        event = calendar.all_events[3]
-        self.assertTrue(event.date > datetime.date.today(), event.date)  # this event repeats daily somewhere in future
-        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.timezone('Asia/Omsk')), event.time)
-        self.assertEqual('Daily event', event.title)
-
-    @unittest.skip("parser for calendar was changed, no need for this method")
-    def test_filter_future_events(self):
-        timezone = pytz.UTC
-        now = datetime.datetime.now(tz=timezone)
-
-        component_past = _get_component()
-        component_past.add('dtstart', now - datetime.timedelta(hours=1))
-        component_now = _get_component()
-        component_now.add('dtstart', now + datetime.timedelta(minutes=10))
-        component_future = _get_component()
-        component_future.add('dtstart', now + datetime.timedelta(hours=2))
-        events = [Event.from_vevent(component_past, timezone),
-                  Event.from_vevent(component_now, timezone),
-                  Event.from_vevent(component_future, timezone)]
-
-        result = list(filter_future_events(events, now, now + datetime.timedelta(hours=1)))
-
-        self.assertEqual(1, len(result))
-        self.assertEqual(component_now.decoded('dtstart'), result[0].notify_datetime)
 
     def test_filter_notified_events(self):
         timezone = pytz.UTC
@@ -269,57 +260,6 @@ class CalbotTestCase(unittest.TestCase):
         self.assertEqual(1, (stats2.calendars - stats1.calendars))
         self.assertEqual(stats2.events, stats1.events)
         shutil.rmtree('var/TEST')
-
-    def test_repeat_event_list_no_repeat(self):
-        event = Event(
-            id='TEST EVENT',
-            title='REPEATING EVENT',
-            date=datetime.date(2017, 1, 4),
-            time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
-        )
-        repeats = event.repeat_between(
-            datetime.datetime(2017, 1, 4, 10, 0, 0, tzinfo=pytz.UTC),
-            datetime.datetime(2017, 1, 8, 10, 0, 0, tzinfo=pytz.UTC))
-        self.assertEqual([], repeats)
-
-    def test_repeat_event_list(self):
-        event = Event(
-            id='TEST EVENT',
-            title='REPEATING EVENT',
-            date=datetime.date(2017, 1, 4),
-            time=datetime.time(10, 0, 0, tzinfo=pytz.UTC),
-            repeat_rule='FREQ=DAILY'
-        )
-        repeats = event.repeat_between(
-            datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
-            datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
-        self.assertEqual(2, len(repeats))
-        repeat = repeats[0]
-        self.assertEqual('TEST EVENT_2017-01-05T10:00:00+00:00', repeat.id)
-        self.assertEqual(datetime.date(2017, 1, 5), repeat.date)
-        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time)
-        repeat = repeats[1]
-        self.assertEqual('TEST EVENT_2017-01-06T10:00:00+00:00', repeat.id)
-        self.assertEqual(datetime.date(2017, 1, 6), repeat.date)
-        self.assertEqual(datetime.time(10, 0, 0, tzinfo=pytz.UTC), repeat.time)
-
-    def test_repeat_fullday_event_list(self):
-        event = Event(
-            id='TEST EVENT',
-            title='REPEATING EVENT',
-            date=datetime.date(2017, 1, 4),
-            repeat_rule='FREQ=DAILY',
-        )
-        repeats = event.repeat_between(
-            datetime.datetime(2017, 1, 4, 9, 0, 0, tzinfo=pytz.UTC),
-            datetime.datetime(2017, 1, 6, 10, 0, 0, tzinfo=pytz.UTC))
-        self.assertEqual(2, len(repeats))
-        repeat = repeats[0]
-        self.assertEqual('TEST EVENT_2017-01-05T00:00:00', repeat.id)
-        self.assertEqual(datetime.date(2017, 1, 5), repeat.date)
-        repeat = repeats[1]
-        self.assertEqual('TEST EVENT_2017-01-06T00:00:00', repeat.id)
-        self.assertEqual(datetime.date(2017, 1, 6), repeat.date)
 
     def test_calendar_save_error(self):
         calendar_config = CalendarConfig.new(
@@ -669,8 +609,6 @@ class CalbotTestCase(unittest.TestCase):
             'До встречи!',
             result)
 
-    # TODO: fix event datetime
-    @unittest.skip("Invalid due to parser change, new parsers returns only events in a certain time range")
     def test_read_repeated_event_override(self):
         timezone = pytz.timezone('Asia/Omsk')
 
@@ -686,17 +624,21 @@ class CalbotTestCase(unittest.TestCase):
                                datetime.datetime(2020, 4, 26, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[5]
+        for e in events:
+            print(e)
+        self.assertEqual(3, len(events))
+
+        event = events[0]
         self.assertEqual(datetime.date(2020, 3, 25), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
-        event = events[6]
+        event = events[1]
         self.assertEqual(datetime.date(2020, 4, 8), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'discord')
-        event = events[7]
+        event = events[2]
         self.assertEqual(datetime.date(2020, 4, 22), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
@@ -750,7 +692,6 @@ class CalbotTestCase(unittest.TestCase):
         self.assertRegex(event.description, r'Пиццот')
 
     # TODO: fix event datetime
-    @unittest.skip("Invalid due to parser change, new parsers returns only events in a certain time range")
     def test_read_repeated_event_exdate(self):
         timezone = pytz.timezone('Asia/Omsk')
 
@@ -765,12 +706,16 @@ class CalbotTestCase(unittest.TestCase):
                                datetime.datetime(2020, 1, 19, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[5]
+        for e in events:
+            print(e)
+        self.assertEqual(2, len(events))
+
+        event = events[0]
         self.assertEqual(datetime.date(2019, 12, 18), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
-        event = events[6]
+        event = events[1]
         self.assertEqual(datetime.date(2020, 1, 15), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата Ужин (OML)', event.title)

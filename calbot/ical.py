@@ -24,7 +24,6 @@ from urllib.request import urlopen
 import pytz
 import icalendar
 import recurring_ical_events
-from dateutil import rrule
 
 from calbot.formatting import BlankFormat
 
@@ -122,16 +121,17 @@ class Event:
         self.notify_datetime = kwargs.get('notify_datetime')
         """calendar event datetime, relative to which to calculate notification moment,
         uses day_start if time for current event is None"""
-        self.repeat_rule = kwargs.get('repeat_rule')
-        """event repeat rule, can be None"""
-        self.exception_dates = kwargs.get('exception_dates', [])
-        """event exception dates, can be None"""
-        self.recurrence_id = kwargs.get('recurrence_id')
-        """event recurrence ID, used to override recurred events, can be None"""
         self.notified_for_advance = kwargs.get('notified_for_advance')
         """hours in advance for which this event should be notified"""
         self.day_start = kwargs.get('day_start')
         """notification time for full-day events"""
+
+    def __repr__(self):
+        return f'Event(id={self.id}, uid={self.uid}, instance_id={self.instance_id}, ' \
+               f'title={self.title}, location={self.location}, description={self.description}, ' \
+               f'date={self.date}, time={self.time}, notify_datetime={self.notify_datetime}, ' \
+               f'notified_for_advance={self.notified_for_advance}, ' \
+               f'day_start={self.day_start})'
 
     @classmethod
     def from_vevent(cls, vevent, timezone, day_start=None):
@@ -162,37 +162,10 @@ class Event:
             event_date = dtstart
             notify_datetime = datetime.combine(event_date, day_start.replace(tzinfo=timezone))
 
-        repeat_rule = None
-        if vevent.get('RRULE') is not None:
-            repeat_rule = vevent.get('RRULE').to_ical().decode('utf-8')
-
-        exception_dates = []
-        if vevent.get('EXDATE') is not None:
-            exdate = vevent.get('EXDATE')
-            try:
-                exlist = []
-                if isinstance(exdate, list):
-                    exlist = exdate
-                else:
-                    exlist = [ exdate ]
-                for exd in exlist:
-                    for exdt in exd.dts:
-                        exception_dates.append(exdt.dt)
-            except:
-                logger.warning('Failed to get EXDATE: %s', str(vevent.get('EXDATE')), exc_info=True)
-
-        # https://www.kanzaki.com/docs/ical/recurrenceId.html
-        recurrence_id = None
-        if vevent.get('RECURRENCE-ID') is not None:
-            try:
-                recurrence_id = timezoned(vevent.get('RECURRENCE-ID').dt, timezone)
-            except:
-                logger.warning('Failed to get RECURRENCE-ID: %s', str(vevent.get('RECURRENCE-ID')), exc_info=True)
-
-        if recurrence_id is None:
+        if notify_datetime is None:
             event_id = event_uid
         else:
-            event_id = "%s_%s" % (event_uid, str(recurrence_id))
+            event_id = "%s_%s" % (event_uid, notify_datetime.isoformat())
 
         event_instance_id = (event_uid, notify_datetime)
 
@@ -208,84 +181,8 @@ class Event:
             date=event_date,
             time=event_time,
             notify_datetime=notify_datetime,
-            repeat_rule=repeat_rule,
-            exception_dates=exception_dates,
-            recurrence_id=recurrence_id,
             day_start=event_day_start
         )
-
-    @classmethod
-    def copy_for_date(cls, event, newdatetime):
-
-        event_id = event.id
-        event_date = None
-        event_time = None
-        notify_datetime = None
-
-        if isinstance(newdatetime, datetime):
-            event_date = newdatetime.date()
-            event_time = newdatetime.timetz()
-            notify_datetime = datetime.combine(event_date, event_time)
-            event_id += '_' + notify_datetime.isoformat()
-        elif isinstance(newdatetime, date):
-            event_date = newdatetime
-            notify_datetime = datetime.combine(event_date, event.day_start)
-            event_id += '_' + event_date.isoformat()
-
-        event_instance_id = (event.uid, notify_datetime)
-
-        return cls(
-            id=event_id,
-            uid=event.uid,
-            instance_id=event_instance_id,
-            title=event.title,
-            location=event.location,
-            description=event.description,
-            date=event_date,
-            time=event_time,
-            notify_datetime=notify_datetime,
-            day_start=event.day_start
-        )
-
-    def repeat_between(self, after, before, explicit_events=None):
-        """
-        Creates copies of this event repeating between specified datetime.
-        The resulting list never includes the original (this) event.
-        :param after:           start of the interval (exclusive)
-        :param before:          end of the interval (inclusive)
-        :param explicit_events: set of (id, datetime) pairs to skip repetition at these moments
-        :return:    list of event repeats, each with it's own unique id
-        """
-        if self.repeat_rule is None:
-            return []
-
-        if self.time is not None:
-            dtstart = datetime.combine(self.date, self.time)
-            rule_set = self._rule_set(dtstart)
-            dates = rule_set.between(after, before, inc=True)
-        else:
-            dtstart = self.date
-            rule_set = self._rule_set(dtstart)
-            # TODO: It still fails for full-day events with RRULE:FREQ=MONTHLY;WKST=MO;UNTIL=20150513T235959Z;BYMONTHDAY=14
-            dates = rule_set.between(after.replace(tzinfo=None), before.replace(tzinfo=None), inc=True)
-
-        dates = list(filter(lambda d: d != dtstart, dates))
-        dates = list(filter(lambda d: d != after, dates))
-        if explicit_events is not None:
-            dates = list(filter(lambda d: self._instance_id_at(d) not in explicit_events, dates))
-        events = list(map(lambda d: Event.copy_for_date(self, d), dates))
-        return events
-
-    def _rule_set(self, dtstart):
-        rule = rrule.rrulestr(self.repeat_rule, dtstart=dtstart)
-        rule_set = rrule.rruleset()
-        rule_set.rrule(rule)
-        for exdate in self.exception_dates:
-            rule_set.exdate(exdate)
-        return rule_set
-
-    def _instance_id_at(self, dt):
-        return self.uid, dt
 
     def to_dict(self):
         """
@@ -297,19 +194,6 @@ class Event:
                     time=self.time or BlankFormat(),
                     location=self.location or BlankFormat(),
                     description=self.description or BlankFormat())
-
-
-def filter_future_events(events, after, before):
-    """
-    Filters only events which are after and before the specified datetime
-    :param events:  iterable of events
-    :param after:   filter events after this datetime (exclusive)
-    :param before:  filter events before this datetime (inclusive)
-    :return: it's generator, yields each filtered event
-    """
-    for event in events:
-        # if after < event.notify_datetime <= before:
-        yield event
 
 
 def filter_notified_events(events, config):
