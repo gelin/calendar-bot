@@ -72,7 +72,7 @@ def enter_url(bot, update, chat_data):
     user_id = str(message.chat_id)
     try:
         chat_data['calendar_url'] = message.text.strip()
-        message.reply_text('Enter a channel name or /cancel')
+        message.reply_text('Enter a channel name or /cancel.\nChannel name should start with @.')
         return ENTERING_CHANNEL
     except Exception:
         logger.error('Failed to send reply to user %s', user_id, exc_info=True)

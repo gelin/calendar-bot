@@ -38,6 +38,7 @@ And then:
 
 ```
 Enter a channel name or /cancel
+Channel name should start with @.
 ```
 
 ### /list
@@ -164,8 +165,14 @@ The command prints the current advance hours and asks new values to update.
 For example:
 
 ```
-Events are notified 48, 24 hours in advance.
-Type another numbers to change or /cancel
+Events are notified 24, 12 hours in advance.
+
+Type how many hours in advance events should be notified. Several intervals can be entered separated by space.
+
+Example:
+48 24 12 6
+
+Enter /cancel to cancel update.
 ```
 
 Enter one or more space separated integer numbers to set the new notification advance.
