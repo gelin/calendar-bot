@@ -647,8 +647,6 @@ class CalbotTestCase(unittest.TestCase):
         ids = set(map(lambda e: e.id, events))
         self.assertEqual(len(events), len(ids))  # all ids must be unique
 
-    # TODO: fix event time assertion
-    @unittest.skip("invalid for now, need to fix event time assertion")
     def test_read_repeated_event_until(self):
         timezone = pytz.timezone('Asia/Omsk')
 
@@ -663,16 +661,22 @@ class CalbotTestCase(unittest.TestCase):
                                datetime.datetime(2019, 2, 10, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[2]
+        for e in events:
+            print(e)
+        self.assertEqual(4, len(events))
+
+        event = events[0]
         self.assertEqual(datetime.date(2019, 1, 23), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Бутерbrot')
-        event = events[5]
+        event = events[3]
         self.assertEqual(datetime.date(2019, 2, 6), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Розы Морозы')
+
+        print('---')
 
         events = sort_events(list(
             calendar.read_ical(calendar.url,
@@ -680,18 +684,21 @@ class CalbotTestCase(unittest.TestCase):
                                datetime.datetime(2019, 3, 24, 23, 59, 59, tzinfo=timezone))
         ))
 
-        event = events[3]
+        for e in events:
+            print(e)
+        self.assertEquals(5, len(events))
+
+        event = events[0]
         self.assertEqual(datetime.date(2019, 3, 6), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Розы Морозы')
-        event = events[6]
+        event = events[3]
         self.assertEqual(datetime.date(2019, 3, 20), event.date)
         self.assertEqual(datetime.time(19, 0, 0, tzinfo=timezone), event.time)
         self.assertEqual('Дата ужин (OML)', event.title)
         self.assertRegex(event.description, r'Пиццот')
 
-    # TODO: fix event datetime
     def test_read_repeated_event_exdate(self):
         timezone = pytz.timezone('Asia/Omsk')
 
