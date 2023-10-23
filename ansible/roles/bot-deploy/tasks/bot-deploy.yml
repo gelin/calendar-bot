@@ -22,7 +22,8 @@
 
 - name: install dependencies
   pip:
-    executable: /usr/bin/pip3
+    virtualenv: '{{ bot_basedir }}/venv'
+    virtualenv_python: '{{ bot_python }}'
     requirements: '{{ bot_basedir }}/requirements.txt'
   notify: restart bot
 

@@ -3,4 +3,5 @@ ansible_user=root
 
 [bothosts]
 #rbx1-fr.quadhost.net
-sandbox1.gelin.ru
+#sandbox1.gelin.ru
+au1.gelin.ru

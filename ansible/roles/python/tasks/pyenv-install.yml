@@ -1,0 +1,33 @@
+---
+
+- name: install necessary packages
+  apt:
+    name:
+      - 'git'
+      # see https://github.com/pyenv/pyenv/wiki#suggested-build-environment
+      - 'build-essential'
+      - 'libssl-dev'
+      - 'zlib1g-dev'
+      - 'libbz2-dev'
+      - 'libreadline-dev'
+      - 'libsqlite3-dev'
+      - 'curl'
+      - 'libncursesw5-dev'
+      - 'xz-utils'
+      - 'tk-dev'
+      - 'libxml2-dev'
+      - 'libxmlsec1-dev'
+      - 'libffi-dev'
+      - 'liblzma-dev'
+
+- name: clone pyenv
+  git:
+    repo: 'https://github.com/pyenv/pyenv.git'
+    dest: '{{ pyenv_root }}'
+
+- name: install pyenv python
+  command:
+    cmd: '{{ pyenv_root }}/bin/pyenv install {{ python_version }}'
+    creates: '{{ pyenv_root }}/versions/{{ python_version }}'
+  environment:
+    PYENV_ROOT: '{{ pyenv_root }}'

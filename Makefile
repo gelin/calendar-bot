@@ -4,23 +4,21 @@ help:
 
 .PHONY: install
 install:
-	pip3 install -r requirements.txt
+	python -m pip install --upgrade pip
+	python -m pip install setuptools
+	python -m pip install -r requirements.txt
 
 .PHONY: run
 run:
-	./calbot.py
+	python calbot.py
 
 .PHONY: test
 test:
-	python3 -m unittest calbot_test.py
+	python -m unittest calbot_test.py
 
 .PHONY: deploy
 deploy:
 	cd ansible && ansible-playbook deploy.yml
-
-.PHONY: copy
-copy:
-	rsync -axzv ./ rbx1-fr.quadhost.net:calbot/
 
 .PHONY: docker
 docker:

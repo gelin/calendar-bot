@@ -11,6 +11,15 @@
     state: directory
     owner: '{{ bot_user }}'
 
+- name: create and update venv
+  pip:
+    virtualenv: '{{ bot_basedir }}/venv'
+    virtualenv_python: '{{ bot_python }}'
+    name:
+      - 'pip'
+      - 'setuptools'
+    state: latest
+
 - name: install systemd service
   template:
     src: bot.service

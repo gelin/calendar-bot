@@ -4,3 +4,8 @@
   tags:
     - python
     - python:install
+
+- import_tasks: 'pyenv-install.yml'
+  tags:
+    - python
+    - python:install

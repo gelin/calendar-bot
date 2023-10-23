@@ -3,7 +3,7 @@ Description={{ bot_service_description }}
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 {{ bot_basedir }}/calbot.py {{ bot_basedir }}/{{ bot_service_name }}.cfg
+ExecStart={{ bot_basedir }}/venv/bin/python {{ bot_basedir }}/calbot.py {{ bot_basedir }}/{{ bot_service_name }}.cfg
 WorkingDirectory={{ bot_basedir }}
 User={{ bot_user }}
 Environment=SENTRY_DSN={{ sentry_dsn }}
