@@ -8,5 +8,10 @@ WorkingDirectory={{ bot_basedir }}
 User={{ bot_user }}
 Environment=SENTRY_DSN={{ sentry_dsn }}
 
+{% if bot_restart_interval is defined %}
+Restart=always
+RuntimeMaxSec={{ bot_restart_interval }}
+{% endif %}
+
 [Install]
 WantedBy=multi-user.target

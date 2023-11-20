@@ -5,3 +5,5 @@ bot_service_name: bot
 bot_service_description: 'Telegram bot'
 
 bot_python: '/opt/pyenv/versions/3.9.18/bin/python'
+
+bot_restart_interval: '24h'
